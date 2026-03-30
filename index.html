@@ -3,58 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Konsole & Zmiana Map (Multiplayer)</title>
+    <title>Epika 3D - RTX, HD & Fast Load</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
         
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
-        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(10px); color: #e6c86e; z-index: 200; }
-        .panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #e6c86e; border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(230,200,110,0.1); width: 320px; }
-        .panels-container { display: flex; flex-wrap: wrap; justify-content: center; }
-        input { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #e6c86e; color: white; text-align: center; width: 85%; border-radius: 5px; }
-        #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
-        button { padding: 12px 20px; font-size: 16px; background: transparent; color: #e6c86e; border: 2px solid #e6c86e; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
-        button:hover { background: #e6c86e; color: #000; box-shadow: 0 0 15px #e6c86e; }
-        #btn-resume { background: #e6c86e; color: #000; font-size: 20px; padding: 15px; }
-        #my-code-display { font-size: 32px; color: #ff3333; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
-        .hidden { display: none !important; }
-        #hud { position: absolute; bottom: 20px; left: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-left: 3px solid #e6c86e; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace;}
-        #music-status { position: absolute; top: 20px; right: 20px; color: #ff3333; font-weight: bold; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #ff3333; z-index: 100; display: none; }
-        #yt-player { position: absolute; top: -9999px; left: -9999px; } 
-        .vhs-text { text-shadow: 2px 0 red, -2px 0 blue; }
+        /* NOWOŚĆ: EKRAN ŁADOWANIA */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
+        #loading-bar-container { width: 300px; height: 10px; background: #222; border-radius: 5px; margin-top: 20px; overflow: hidden; border: 1px solid #00ffff; }
+        #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 10px #00ffff; transition: width 0.1s; }
 
-        /* Konsola deweloperska */
-        #cmd-input { font-family: monospace; color: #00ff00; border-color: #00ff00; }
-        #btn-cmd { border-color: #00ff00; color: #00ff00; }
-        #btn-cmd:hover { background: #00ff00; color: #000; box-shadow: 0 0 15px #00ff00; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(15px); color: #00ffff; z-index: 200; display: none; }
+        .panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #00ffff; border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 320px; }
+        .panels-container { display: flex; flex-wrap: wrap; justify-content: center; }
+        input { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px; }
+        #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
+        button { padding: 12px 20px; font-size: 16px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
+        button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
+        #btn-resume { background: #00ffff; color: #000; font-size: 20px; padding: 15px; }
+        #my-code-display { font-size: 32px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
+        .hidden { display: none !important; }
+        #hud { position: absolute; bottom: 20px; left: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace;}
+        #music-status { position: absolute; top: 20px; right: 20px; color: #ff00ff; font-weight: bold; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #ff00ff; z-index: 100; display: none; }
+        #yt-player { position: absolute; top: -9999px; left: -9999px; } 
+        
+        #cmd-input { font-family: monospace; color: #ff00ff; border-color: #ff00ff; }
+        #btn-cmd { border-color: #ff00ff; color: #ff00ff; }
+        #btn-cmd:hover { background: #ff00ff; color: #000; box-shadow: 0 0 15px #ff00ff; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
+    <div id="loading-screen">
+        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE DANYCH...</h1>
+        <p style="color: #888; margin-top: 5px;">Inicjalizacja środowiska RTX i tekstur HD</p>
+        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+    </div>
+
     <div id="yt-player"></div>
     <div id="crosshair"></div>
     <div id="hud">
-        <b>F</b>: Latarka (Wkrótce)<br>
-        <b>LPM</b>: Postaw Marker | <b>PPM</b>: Usuń<br>
-        <b>WSAD</b>: Ruch | <b>Shift</b>: Bieg
+        <b>F</b>: Latarka<br>
+        <b>LPM</b>: Zbuduj | <b>PPM</b>: Zniszcz<br>
+        <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
     </div>
     <div id="music-status">Kaseta: Pusta</div>
 
     <div id="menu">
-        <h1 class="vhs-text" style="margin-bottom: 5px; font-size: 4em;">LEVEL 0</h1>
-        <p style="color: #888; margin-bottom: 30px;">Nie zgub się...</p>
+        <h1 style="margin-bottom: 5px; font-size: 4em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
+        <p style="color: #888; margin-bottom: 30px;">Zoptymalizowane. Piękne. Gotowe.</p>
         
         <div id="login-panels" style="display: flex; flex-direction: column; align-items: center;">
-            <input type="text" id="my-nick" placeholder="OBIEKT_TESTOWY_01" value="Wędrowiec">
+            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Wędrowiec">
             <div class="panels-container">
                 <div class="panel" id="host-panel">
-                    <h3>ZAŁÓŻ LOBBY</h3>
+                    <h3>ZAŁÓŻ SERWER</h3>
                     <button id="btn-create">Generuj Kod</button>
                     <div id="code-container" class="hidden">
                         <p style="font-size: 12px; color: #aaa;">Kod dla grupy:</p>
                         <div id="my-code-display"></div>
-                        <button id="btn-start-host">Rozpocznij Zejście</button>
+                        <button id="btn-start-host">Rozpocznij Grę</button>
                     </div>
                 </div>
                 <div class="panel" id="join-panel">
@@ -66,25 +75,23 @@
         </div>
 
         <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
-            <h2 class="vhs-text" style="color: #fff;">PAUZA</h2>
+            <h2 style="color: #fff; text-shadow: 0 0 10px #fff;">PAUZA</h2>
             <div class="panels-container">
                 <div class="panel"><button id="btn-resume">WZNÓW GRĘ</button></div>
-                
-                <div class="panel" style="border-color: #00ff00;">
-                    <h3 style="color: #00ff00;">KONSOLA ADMINA</h3>
-                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">Zmień mapę: /map [nazwa_folderu]</p>
-                    <input type="text" id="cmd-input" placeholder="np. /map backrooms"><br>
+                <div class="panel" style="border-color: #ff00ff;">
+                    <h3 style="color: #ff00ff;">KONSOLA ADMINA</h3>
+                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">/map [nazwa_folderu] (lub wpisz: /map klasyk)</p>
+                    <input type="text" id="cmd-input" placeholder="np. /map klasyk"><br>
                     <button id="btn-cmd">Wykonaj Komendę</button>
                 </div>
-
-                <div class="panel" style="border-color: #ff3333;">
-                    <h3 style="color: #ff3333;">RADIOWĘZEŁ (YT)</h3>
+                <div class="panel" style="border-color: #ffff00;">
+                    <h3 style="color: #ffff00;">RADIOWĘZEŁ (YT)</h3>
                     <input type="text" id="yt-url-input" placeholder="Wklej link YouTube"><br>
-                    <button id="btn-play-music" style="border-color: #ff3333; color: #ff3333;">Odtwórz kasetę</button>
+                    <button id="btn-play-music" style="border-color: #ffff00; color: #ffff00;">Odtwórz muzykę</button>
                 </div>
             </div>
         </div>
-        <p id="status-msg" style="margin-top: 15px; color: #ff3333; font-weight: bold;"></p>
+        <p id="status-msg" style="margin-top: 15px; color: #00ffff; font-weight: bold;"></p>
     </div>
 
     <script type="importmap">
@@ -100,7 +107,13 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        
+        // NOWOŚĆ: Post-Processing do efektu RTX (Glow, Bloom)
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
+        // --- YOUTUBE ---
         let ytPlayer; let isYtReady = false;
         const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -114,80 +127,151 @@
         const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
         function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
 
-        // --- SCENA 3D ---
+        // --- SCENA 3D I ULEPSZONY RENDERER ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a05);
-        scene.fog = new THREE.FogExp2(0x1a1a12, 0.02); 
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+        scene.background = new THREE.Color(0x050508);
+        scene.fog = new THREE.FogExp2(0x050508, 0.015); 
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace; 
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.8;
+        renderer.toneMappingExposure = 1.0;
         document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xfff5b5, 0.1); scene.add(ambientLight);
-        const flashLight = new THREE.SpotLight(0xffffff, 2, 30, Math.PI/4, 0.5, 1);
+        // --- POST-PROCESSING (EFEKT RTX BLOOM) ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.2; // Co ma świecić
+        bloomPass.strength = 1.2;  // Siła poświaty
+        bloomPass.radius = 0.5;    // Rozmycie
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // Oświetlenie środowiskowe
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambientLight);
+        const flashLight = new THREE.SpotLight(0xffffff, 3, 40, Math.PI/4, 0.5, 1);
         flashLight.position.set(0, 0, 0); flashLight.target.position.set(0, 0, -1); flashLight.castShadow = true;
         camera.add(flashLight); camera.add(flashLight.target); scene.add(camera);
 
-        // --- SYSTEM DYNAMICZNEGO ŁADOWANIA MAPY ---
-        const mapColliders = []; 
-        const buildableSurfaces = []; 
-        let currentMapMesh = null; // Przechowujemy tu aktywną mapę
-        const loader = new GLTFLoader();
+        // --- NOWOŚĆ: SYSTEM ŁADOWANIA (LOADING MANAGER) ---
+        const manager = new THREE.LoadingManager();
+        manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+            const progress = (itemsLoaded / itemsTotal) * 100;
+            document.getElementById('loading-bar').style.width = progress + '%';
+        };
+        manager.onLoad = function () {
+            // Gdy wszystko się załaduje, chowamy ekran i pokazujemy Menu
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => { 
+                loadingScreen.style.display = 'none'; 
+                uiMenu.style.display = 'flex';
+            }, 500);
+        };
+        manager.onError = function (url) {
+            console.error('Błąd podczas ładowania: ' + url);
+        };
 
-        // Awaryjna podłoga - nie usuwamy jej nigdy
+        const loader = new GLTFLoader(manager);
+
+        const mapColliders = []; const buildableSurfaces = []; let currentMapMesh = null;
+        const classicMapGroup = new THREE.Group(); // Do trzymania obiektów mapy proceduralnej
+
+        // Awaryjna podłoga
         const floorGeo = new THREE.PlaneGeometry(500, 500); const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
         const floorMesh = new THREE.Mesh(floorGeo, floorMat); floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; 
         scene.add(floorMesh);
 
-        function loadMap(mapFolderName, sendToNetwork = true) {
-            statusMsg.innerText = "Ładowanie obszaru: " + mapFolderName + "...";
-            statusMsg.style.color = "#00ff00";
-
-            // 1. Zniszcz starą mapę (jeśli istnieje)
-            if (currentMapMesh) {
-                scene.remove(currentMapMesh);
-            }
-
-            // 2. Wyczyść fizykę i zostaw tylko podłogę awaryjną
+        function cleanMap() {
+            if (currentMapMesh) scene.remove(currentMapMesh);
+            scene.remove(classicMapGroup);
+            while(classicMapGroup.children.length > 0) classicMapGroup.remove(classicMapGroup.children[0]);
+            
             mapColliders.length = 0; buildableSurfaces.length = 0;
             mapColliders.push(floorMesh); buildableSurfaces.push(floorMesh);
-
-            // 3. Wyczyść znaczniki z poprzedniej mapy
             interactableBlocks.forEach(b => scene.remove(b));
-            interactableBlocks.length = 0;
-            builtBlocksNetwork.length = 0;
+            interactableBlocks.length = 0; builtBlocksNetwork.length = 0;
+        }
 
-            // 4. Załaduj nową
+        // --- NOWOŚĆ: MAPA "KLASYK" (RTX Proceduralna) ---
+        function generateClassicMap() {
+            cleanMap();
+            scene.fog.color.setHex(0x050510);
+            
+            // Lustrzana podłoga (HD RTX vibe)
+            const rtxFloorGeo = new THREE.PlaneGeometry(200, 200);
+            const rtxFloorMat = new THREE.MeshStandardMaterial({ color: 0x11111a, roughness: 0.1, metalness: 0.9 });
+            const rtxFloor = new THREE.Mesh(rtxFloorGeo, rtxFloorMat);
+            rtxFloor.rotation.x = -Math.PI / 2; rtxFloor.receiveShadow = true;
+            classicMapGroup.add(rtxFloor); mapColliders.push(rtxFloor); buildableSurfaces.push(rtxFloor);
+
+            // Świecące obeliski (Bloom Pass sprawi że będą wspaniałe)
+            const boxGeo = new THREE.BoxGeometry(2, 20, 2);
+            for(let i=0; i<30; i++) {
+                // Emissive sprawia, że obiekt sam świeci (Bloom go przechwyci)
+                const isNeon = Math.random() > 0.7;
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: isNeon ? 0x000000 : 0x222222, 
+                    emissive: isNeon ? new THREE.Color(Math.random(), Math.random(), 1) : 0x000000,
+                    emissiveIntensity: isNeon ? 5 : 0, // Moc światła dla Blooma
+                    roughness: 0.2, metalness: 0.8
+                });
+                const pillar = new THREE.Mesh(boxGeo, mat);
+                pillar.position.set((Math.random()-0.5)*150, 10, (Math.random()-0.5)*150);
+                if (pillar.position.length() < 10) pillar.position.x += 15; // Wolny środek
+                pillar.castShadow = true; pillar.receiveShadow = true;
+                classicMapGroup.add(pillar);
+                
+                pillar.updateMatrixWorld();
+                mapColliders.push(new THREE.Box3().setFromObject(pillar));
+            }
+
+            // Centralny kryształ
+            const coreGeo = new THREE.OctahedronGeometry(3, 1);
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00ffff, emissiveIntensity: 10 });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.position.set(0, 8, 0);
+            classicMapGroup.add(core);
+
+            const coreLight = new THREE.PointLight(0x00ffff, 5, 50);
+            coreLight.position.set(0, 8, 0); coreLight.castShadow = true;
+            classicMapGroup.add(coreLight);
+
+            scene.add(classicMapGroup);
+            camera.position.set(0, 2, 20);
+            statusMsg.innerText = "Załadowano mape: HD KLASYK";
+        }
+
+        function loadMap(mapFolderName, sendToNetwork = true) {
+            if (mapFolderName === 'klasyk') {
+                generateClassicMap();
+                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: 'klasyk' });
+                return;
+            }
+
+            statusMsg.innerText = "Ładowanie obszaru: " + mapFolderName + "...";
+            cleanMap();
+
             loader.load('./models/' + mapFolderName + '/scene.gltf', (gltf) => {
                 currentMapMesh = gltf.scene;
                 currentMapMesh.traverse((node) => {
                     if (node.isMesh) {
                         node.receiveShadow = true; node.castShadow = true;
-                        if(node.material) node.material.roughness = 0.9; 
+                        if(node.material) node.material.roughness = 0.8; 
                         mapColliders.push(node); buildableSurfaces.push(node);
                     }
                 });
-                currentMapMesh.position.set(0, 0, 0); 
-                scene.add(currentMapMesh);
-                
-                // Teleport gracza na start mapy
-                camera.position.set(0, 2, 0);
-                statusMsg.innerText = "Mapa zmieniona pomyślnie!";
-                
-                // 5. Wyślij komendę do znajomego, jeśli gra z nami
-                if (sendToNetwork && conn && conn.open) {
-                    conn.send({ type: 'commandMap', mapName: mapFolderName });
-                }
+                currentMapMesh.position.set(0, 0, 0); scene.add(currentMapMesh);
+                camera.position.set(0, 2, 0); statusMsg.innerText = "Mapa zmieniona pomyślnie!";
+                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: mapFolderName });
             }, undefined, (error) => {
-                console.error("Nie znaleziono mapy!", error);
-                statusMsg.innerText = "BŁĄD: Mapa '" + mapFolderName + "' nie istnieje!";
-                statusMsg.style.color = "#ff3333";
+                console.error("Błąd mapy!", error); statusMsg.innerText = "BŁĄD: Brak mapy!";
             });
         }
 
@@ -195,7 +279,7 @@
         function createTextSprite(msg) {
             const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
             canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64);
-            context.fillStyle = "#ff0000"; context.textAlign = "center"; context.fillText(msg, 128, 40);
+            context.fillStyle = "#00ffff"; context.textAlign = "center"; context.fillText(msg, 128, 40);
             return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
         }
 
@@ -204,15 +288,15 @@
             remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5; remotePlayerNickSprite.scale.set(5, 1.25, 1);
             remotePlayerGroup.add(remotePlayerNickSprite); scene.add(remotePlayerGroup);
 
-            const remoteLight = new THREE.PointLight(0xffaa00, 1, 10); remoteLight.position.y = 1; remotePlayerGroup.add(remoteLight);
-            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true})); fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
+            const remoteLight = new THREE.PointLight(0x00ffff, 1, 10); remoteLight.position.y = 1; remotePlayerGroup.add(remoteLight);
+            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0x00ffff, wireframe: true})); fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
 
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; 
                 avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
                 remotePlayerGroup.remove(fallbackMesh); remotePlayerGroup.add(avatar);
                 if (gltf.animations && gltf.animations.length > 0) { remoteMixer = new THREE.AnimationMixer(avatar); remoteMixer.clipAction(gltf.animations[0]).play(); }
-            }, undefined, (err) => { console.warn("Model błąd.", err); });
+            });
         }
 
         function handleNetworkData(data) {
@@ -222,12 +306,11 @@
             if(data.type === 'build') { placeBlock(new THREE.Vector3(data.x, data.y, data.z), false, data.id); }
             if(data.type === 'destroy') { removeBlockById(data.id, false); }
             if(data.type === 'music' && isYtReady && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(data.videoId); uiMusicStatus.innerText = "Radiowęzeł Nadaje"; }
-            // NOWOŚĆ: Synchronizacja komendy z serwera
             if(data.type === 'commandMap') { loadMap(data.mapName, false); }
         }
 
-        // STARTUJEMY Z MAPĄ BACKROOMS
-        loadMap('backrooms', false);
+        // --- ZMIANA: Na starcie nie ładujemy nic ciężkiego. Po prostu generujemy klasyka ---
+        generateClassicMap();
 
         function enterWorld() {
             isGameRunning = true; uiMenu.style.display = 'none';
@@ -236,48 +319,25 @@
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick });
         }
 
-        // --- OBSŁUGA MENU ---
-        document.getElementById('btn-create').addEventListener('click', () => {
-            myNick = document.getElementById('my-nick').value || "Host";
-            peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie połączenia...";
-            peer.on('open', (id) => { document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie na dołączenie..."; isHost = true; });
-            peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); });
-        });
-
-        document.getElementById('btn-join').addEventListener('click', () => {
-            myNick = document.getElementById('my-nick').value || "Klient";
-            const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return;
-            peer = new Peer(); statusMsg.innerText = "Łączenie z sygnałem...";
-            peer.on('open', () => { conn = peer.connect(code); conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); setTimeout(enterWorld, 500); }); });
-        });
-
+        document.getElementById('btn-create').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Host"; peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; peer.on('open', (id) => { document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; }); peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); });
+        document.getElementById('btn-join').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; peer = new Peer(); statusMsg.innerText = "Łączenie..."; peer.on('open', () => { conn = peer.connect(code); conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); setTimeout(enterWorld, 500); }); }); });
         document.getElementById('btn-start-host').addEventListener('click', enterWorld);
         document.getElementById('btn-resume').addEventListener('click', () => { uiMenu.style.display = 'none'; controls.lock(); });
-        
-        document.getElementById('btn-play-music').addEventListener('click', () => {
-            const id = getYouTubeID(document.getElementById('yt-url-input').value);
-            if(id) { if(isYtReady) ytPlayer.loadVideoById(id); uiMusicStatus.innerText = "Radiowęzeł: Twoja Kaseta"; if(conn && conn.open) conn.send({ type: 'music', videoId: id }); controls.lock(); } else alert("Zły link!");
-        });
+        document.getElementById('btn-play-music').addEventListener('click', () => { const id = getYouTubeID(document.getElementById('yt-url-input').value); if(id) { if(isYtReady) ytPlayer.loadVideoById(id); uiMusicStatus.innerText = "Radiowęzeł: Kaseta"; if(conn && conn.open) conn.send({ type: 'music', videoId: id }); controls.lock(); } else alert("Zły link!"); });
 
-        // KONSOLA ADMINA W UI
         document.getElementById('btn-cmd').addEventListener('click', () => {
             const cmd = document.getElementById('cmd-input').value.trim().toLowerCase();
             if (cmd.startsWith('/map ')) {
-                const mapName = cmd.split(' ')[1]; // Wyciąga np. "las" z "/map las"
-                if (mapName) {
-                    loadMap(mapName, true); // true = wyślij do drugiego gracza
-                    controls.lock(); // Zamknij menu i wróć do gry
-                }
-            } else {
-                statusMsg.innerText = "Nieznana komenda! Spróbuj /map [nazwa]";
-            }
-            document.getElementById('cmd-input').value = ""; // Wyczyść pole po kliknięciu
+                const mapName = cmd.split(' ')[1];
+                if (mapName) { loadMap(mapName, true); controls.lock(); }
+            } else statusMsg.innerText = "Spróbuj /map [nazwa] lub /map klasyk";
+            document.getElementById('cmd-input').value = "";
         });
 
-
-        // --- MARKERY ---
+        // --- BUDOWANIE (Świecące klocki RTX) ---
         const raycaster = new THREE.Raycaster();
-        const blockGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5); const blockMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 }); 
+        const blockGeo = new THREE.BoxGeometry(1, 1, 1); 
+        const blockMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 2.0, roughness: 0.2 }); 
         const interactableBlocks = []; const builtBlocksNetwork = [];
 
         function placeBlock(position, sendToNetwork = true, id = Math.random().toString(36).substr(2, 9)) {
@@ -295,7 +355,7 @@
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             if (e.button === 0) { 
                 const intersects = raycaster.intersectObjects(buildableSurfaces, false);
-                if (intersects.length > 0) placeBlock(intersects[0].point.clone().add(intersects[0].face.normal.clone().multiplyScalar(0.25)), true);
+                if (intersects.length > 0) placeBlock(intersects[0].point.clone().add(intersects[0].face.normal.clone().multiplyScalar(0.5)), true);
             } else if (e.button === 2) { 
                 const intersects = raycaster.intersectObjects(interactableBlocks, false);
                 if (intersects.length > 0) removeBlockById(intersects[0].object.userData.id, true);
@@ -330,9 +390,16 @@
 
             if (remoteMixer) remoteMixer.update(delta);
 
+            if (classicMapGroup.children.length > 0) {
+                const time = clock.getElapsedTime();
+                // Animacja głównego kryształu w mapie klasycznej
+                const core = classicMapGroup.children.find(c => c.geometry && c.geometry.type === "OctahedronGeometry");
+                if (core) { core.rotation.y += delta; core.position.y = 8 + Math.sin(time * 2) * 1; }
+            }
+
             if (controls.isLocked) {
                 direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
-                const speedMult = isSprinting ? 25.0 : 12.0; 
+                const speedMult = isSprinting ? 35.0 : 15.0; 
                 
                 if(moveF||moveB||moveL||moveR) { 
                     walkTime += delta * (isSprinting ? 12 : 8); 
@@ -361,10 +428,19 @@
                 }
             }
             if(remotePlayerNickSprite) remotePlayerNickSprite.quaternion.copy(camera.quaternion);
-            renderer.render(scene, camera);
+            
+            // ZAMIAST RENDERERA UŻYWAMY COMPOSERA DO EFEKTÓW RTX
+            composer.render();
         }
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-        animate();
+        window.addEventListener('resize', () => { 
+            camera.aspect = window.innerWidth/window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Czekamy chwilkę na starcie by mieć pewność że shadery się skompilują
+        setTimeout(animate, 500);
     </script>
 </body>
 </html>
