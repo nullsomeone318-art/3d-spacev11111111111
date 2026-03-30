@@ -3,31 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - RTX, HD & Fast Load</title>
+    <title>Epika 3D - Proximity Chat & Boombox</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
         
-        /* NOWOŚĆ: EKRAN ŁADOWANIA */
-        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
+        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; }
+        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; }
+        #btn-init:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px #00ffff; }
+        
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
         #loading-bar-container { width: 300px; height: 10px; background: #222; border-radius: 5px; margin-top: 20px; overflow: hidden; border: 1px solid #00ffff; }
         #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 10px #00ffff; transition: width 0.1s; }
+        #btn-force-start { margin-top: 20px; padding: 10px 20px; background: #330000; color: #ff0000; border: 1px solid #ff0000; cursor: pointer; }
 
         #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
         #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(15px); color: #00ffff; z-index: 200; display: none; }
         .panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #00ffff; border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 320px; }
-        .panels-container { display: flex; flex-wrap: wrap; justify-content: center; }
-        input { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px; }
+        .panels-container { display: flex; flex-wrap: wrap; justify-content: center; max-width: 1200px; }
+        input, select { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px; }
         #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
         button { padding: 12px 20px; font-size: 16px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
         button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
-        #btn-resume { background: #00ffff; color: #000; font-size: 20px; padding: 15px; }
         #my-code-display { font-size: 32px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
         .hidden { display: none !important; }
-        #hud { position: absolute; bottom: 20px; left: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace;}
-        #music-status { position: absolute; top: 20px; right: 20px; color: #ff00ff; font-weight: bold; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #ff00ff; z-index: 100; display: none; }
-        #yt-player { position: absolute; top: -9999px; left: -9999px; } 
         
+        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace; text-align: right;}
+        
+        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 350px; height: 250px; display: none; flex-direction: column; z-index: 150; }
+        #chat-messages { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 5px; padding: 10px; overflow-y: auto; color: white; font-family: sans-serif; font-size: 14px; margin-bottom: 5px; display: flex; flex-direction: column; justify-content: flex-end;}
+        #chat-input-container { display: none; }
+        #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #00ffff; color: white; border-radius: 5px; }
+        .msg-line { margin-bottom: 5px; text-shadow: 1px 1px 2px black;}
+        .msg-nick { font-weight: bold; color: #00ffff; }
+
         #cmd-input { font-family: monospace; color: #ff00ff; border-color: #ff00ff; }
         #btn-cmd { border-color: #ff00ff; color: #ff00ff; }
         #btn-cmd:hover { background: #ff00ff; color: #000; box-shadow: 0 0 15px #ff00ff; }
@@ -35,24 +44,36 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
-    <div id="loading-screen">
-        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE DANYCH...</h1>
-        <p style="color: #888; margin-top: 5px;">Inicjalizacja środowiska RTX i tekstur HD</p>
-        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+    <audio id="local-music-player" loop crossorigin="anonymous"></audio>
+
+    <div id="init-screen">
+        <h1 style="font-size: 3em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
+        <p>Proximity Chat wymaga dostępu do mikrofonu</p>
+        <button id="btn-init">ZAINICJUJ SYSTEM</button>
     </div>
 
-    <div id="yt-player"></div>
+    <div id="loading-screen">
+        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE DANYCH...</h1>
+        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+        <button id="btn-force-start">Wymuś Start</button>
+    </div>
+
     <div id="crosshair"></div>
     <div id="hud">
-        <b>F</b>: Latarka<br>
+        <b>[T]</b>: Czat | <b>[ESC]</b>: Menu<br>
         <b>LPM</b>: Zbuduj | <b>PPM</b>: Zniszcz<br>
         <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
     </div>
-    <div id="music-status">Kaseta: Pusta</div>
+
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Napisz i wciśnij ENTER..." autocomplete="off">
+        </div>
+    </div>
 
     <div id="menu">
         <h1 style="margin-bottom: 5px; font-size: 4em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
-        <p style="color: #888; margin-bottom: 30px;">Zoptymalizowane. Piękne. Gotowe.</p>
         
         <div id="login-panels" style="display: flex; flex-direction: column; align-items: center;">
             <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Wędrowiec">
@@ -77,17 +98,27 @@
         <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
             <h2 style="color: #fff; text-shadow: 0 0 10px #fff;">PAUZA</h2>
             <div class="panels-container">
-                <div class="panel"><button id="btn-resume">WZNÓW GRĘ</button></div>
+                <div class="panel"><button id="btn-resume" style="background: #00ffff; color:#000;">WZNÓW GRĘ</button></div>
+                
+                <div class="panel" style="border-color: #00ffaa;">
+                    <h3 style="color: #00ffaa;">PROXIMITY CHAT</h3>
+                    <button id="btn-toggle-mic" style="border-color: #00ffaa; color: #00ffaa;">Wyłącz Mikrofon</button>
+                    <button id="btn-toggle-sound" style="border-color: #00ffaa; color: #00ffaa;">Odcisz Wszystkich</button>
+                </div>
+
+                <div class="panel" style="border-color: #ffff00;">
+                    <h3 style="color: #ffff00;">BOOMBOX (Folder /music/)</h3>
+                    <select id="music-select">
+                        <option value="">-- Wybierz piosenkę --</option>
+                    </select>
+                    <button id="btn-play-local" style="border-color: #ffff00; color: #ffff00;">Graj w mojej głowie</button>
+                    <button id="btn-share-local" style="border-color: #ffff00; color: #ffff00;">Nadawaj jako Boombox!</button>
+                </div>
+
                 <div class="panel" style="border-color: #ff00ff;">
                     <h3 style="color: #ff00ff;">KONSOLA ADMINA</h3>
-                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">/map [nazwa_folderu] (lub wpisz: /map klasyk)</p>
                     <input type="text" id="cmd-input" placeholder="np. /map klasyk"><br>
                     <button id="btn-cmd">Wykonaj Komendę</button>
-                </div>
-                <div class="panel" style="border-color: #ffff00;">
-                    <h3 style="color: #ffff00;">RADIOWĘZEŁ (YT)</h3>
-                    <input type="text" id="yt-url-input" placeholder="Wklej link YouTube"><br>
-                    <button id="btn-play-music" style="border-color: #ffff00; color: #ffff00;">Odtwórz muzykę</button>
                 </div>
             </div>
         </div>
@@ -107,172 +138,162 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-        
-        // NOWOŚĆ: Post-Processing do efektu RTX (Glow, Bloom)
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // --- YOUTUBE ---
-        let ytPlayer; let isYtReady = false;
-        const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        window.onYouTubeIframeAPIReady = function() { ytPlayer = new YT.Player('yt-player', { height: '10', width: '10', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }, events: { 'onReady': () => { isYtReady = true; } } }); };
-        function getYouTubeID(url) { const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
+        // ==========================================
+        // BAZA PIOSENEK DO BOOMBOXA
+        // ==========================================
+        const myMusicFiles = [
+            "lady_gaga.mp3",  
+            "epic_song.mp3",
+            "ambient_backrooms.wav"
+        ];
+        const musicSelect = document.getElementById('music-select');
+        myMusicFiles.forEach(file => { let option = document.createElement('option'); option.value = file; option.text = file; musicSelect.appendChild(option); });
+        const musicPlayer = document.getElementById('local-music-player');
 
+        // --- ZMIENNE GLOBALNE ---
         let peer = null, conn = null, myNick = "Wędrowiec", isHost = false, isGameRunning = false;
         let remotePlayerGroup = new THREE.Group(), remotePlayerNickSprite = null, remoteAvatarLoaded = false, remoteMixer = null, remotePlayerExists = false;
         
-        const uiMenu = document.getElementById('menu'), uiHud = document.getElementById('hud'), uiMusicStatus = document.getElementById('music-status');
+        const uiMenu = document.getElementById('menu'), uiHud = document.getElementById('hud');
         const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
         function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
 
-        // --- SCENA 3D I ULEPSZONY RENDERER ---
+        // --- SCENA 3D I AUDIO 3D (PROXIMITY CHAT) ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x050508);
         scene.fog = new THREE.FogExp2(0x050508, 0.015); 
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         
+        // NOWOŚĆ: Audio Listener na Głowie Gracza
+        const audioListener = new THREE.AudioListener();
+        camera.add(audioListener);
+        
+        // NOWOŚĆ: Dźwięk Pozycyjny (Głos Znajomego z jego Avatara)
+        const remotePositionalAudio = new THREE.PositionalAudio(audioListener);
+        remotePositionalAudio.setRefDistance(5); // Zaczyna cichnąć od 5 metra
+        remotePositionalAudio.setMaxDistance(50); // Na 50 metrach go nie słychać
+        remotePositionalAudio.setRolloffFactor(2); // Jak mocno cichnie wraz z odległością
+        remotePlayerGroup.add(remotePositionalAudio); // Doczepiamy dźwięk do modelu kumpla!
+
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputColorSpace = THREE.SRGBColorSpace; 
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // --- POST-PROCESSING (EFEKT RTX BLOOM) ---
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2; // Co ma świecić
-        bloomPass.strength = 1.2;  // Siła poświaty
-        bloomPass.radius = 0.5;    // Rozmycie
-        const composer = new EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
+        bloomPass.threshold = 0.2; bloomPass.strength = 1.2; bloomPass.radius = 0.5;
+        const composer = new EffectComposer(renderer); composer.addPass(renderScene); composer.addPass(bloomPass);
 
-        // Oświetlenie środowiskowe
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambientLight);
-        const flashLight = new THREE.SpotLight(0xffffff, 3, 40, Math.PI/4, 0.5, 1);
-        flashLight.position.set(0, 0, 0); flashLight.target.position.set(0, 0, -1); flashLight.castShadow = true;
-        camera.add(flashLight); camera.add(flashLight.target); scene.add(camera);
+        camera.position.set(0, 2, 0); scene.add(camera);
 
-        // --- NOWOŚĆ: SYSTEM ŁADOWANIA (LOADING MANAGER) ---
+        // --- ZAAWANSOWANY MIXER AUDIO (Voice + Muzyka) ---
+        let localMicStream = null;
+        let mixedStreamDestination = null;
+        let isMicMuted = false;
+        let isDeafened = false;
+
+        async function setupAudioSystem() {
+            // Wymuszenie startu AudioContextu w Three.js po kliknięciu
+            if (audioListener.context.state === 'suspended') {
+                await audioListener.context.resume();
+            }
+
+            try {
+                // Pobieramy mikrofon
+                localMicStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                console.log("Mikrofon podłączony!");
+                
+                // Tworzymy punkt wyjściowy dla zmiksowanego strumienia
+                const audioCtx = audioListener.context;
+                mixedStreamDestination = audioCtx.createMediaStreamDestination();
+                
+                // KABEL 1: Podłączamy mikrofon do wyjścia sieciowego
+                const micSourceNode = audioCtx.createMediaStreamSource(localMicStream);
+                micSourceNode.connect(mixedStreamDestination);
+
+                // KABEL 2: Podłączamy Odtwarzacz MP3 do wyjścia sieciowego ORAZ do Twoich głośników
+                const musicSourceNode = audioCtx.createMediaElementSource(musicPlayer);
+                musicSourceNode.connect(mixedStreamDestination); // Wysyła w sieć
+                musicSourceNode.connect(audioCtx.destination);   // Żebyś Ty też słyszał co puszczasz
+                
+            } catch (err) {
+                console.warn("Brak mikrofonu. Nadawanie głosowe niedostępne.", err);
+            }
+        }
+
+        // Obsługa przycisków Voice w Menu
+        document.getElementById('btn-toggle-mic').addEventListener('click', (e) => {
+            if(localMicStream) {
+                isMicMuted = !isMicMuted;
+                localMicStream.getAudioTracks()[0].enabled = !isMicMuted;
+                e.target.innerText = isMicMuted ? "Włącz Mikrofon" : "Wyłącz Mikrofon";
+                e.target.style.color = isMicMuted ? "red" : "#00ffaa";
+            }
+        });
+        document.getElementById('btn-toggle-sound').addEventListener('click', (e) => {
+            isDeafened = !isDeafened;
+            remotePositionalAudio.setVolume(isDeafened ? 0 : 1); // Wycisza model kumpla
+            e.target.innerText = isDeafened ? "Odcisz Wszystkich" : "Wycisz Wszystkich";
+            e.target.style.color = isDeafened ? "red" : "#00ffaa";
+        });
+
+        // --- CZAT TEKSTOWY ---
+        const chatContainer = document.getElementById('chat-container'), chatMessages = document.getElementById('chat-messages');
+        const chatInputContainer = document.getElementById('chat-input-container'), chatInput = document.getElementById('chat-input');
+        let isChatting = false;
+
+        function addChatMessage(sender, text, color = "#00ffff") {
+            const div = document.createElement('div'); div.className = "msg-line";
+            div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
+            chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const txt = chatInput.value.trim();
+                if (txt !== '') {
+                    addChatMessage(myNick, txt, "#00ff00");
+                    if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick });
+                    chatInput.value = '';
+                }
+                isChatting = false; chatInputContainer.style.display = 'none'; controls.lock();
+            }
+        });
+
+        // --- SYSTEM ŁADOWANIA MAPY I ŚRODOWISKA ---
         const manager = new THREE.LoadingManager();
-        manager.onProgress = function (url, itemsLoaded, itemsTotal) {
-            const progress = (itemsLoaded / itemsTotal) * 100;
-            document.getElementById('loading-bar').style.width = progress + '%';
-        };
-        manager.onLoad = function () {
-            // Gdy wszystko się załaduje, chowamy ekran i pokazujemy Menu
-            const loadingScreen = document.getElementById('loading-screen');
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => { 
-                loadingScreen.style.display = 'none'; 
-                uiMenu.style.display = 'flex';
-            }, 500);
-        };
-        manager.onError = function (url) {
-            console.error('Błąd podczas ładowania: ' + url);
-        };
+        manager.onProgress = function (url, loaded, total) { document.getElementById('loading-bar').style.width = ((loaded / total) * 100) + '%'; };
+        manager.onLoad = function () { hideLoadingScreen(); };
+        manager.onError = function (url) { console.error('Błąd: ' + url); };
+
+        function hideLoadingScreen() { const ls = document.getElementById('loading-screen'); ls.style.opacity = '0'; setTimeout(() => { ls.style.display = 'none'; uiMenu.style.display = 'flex'; }, 500); }
+        document.getElementById('btn-force-start').addEventListener('click', hideLoadingScreen);
 
         const loader = new GLTFLoader(manager);
+        const mapColliders = []; const classicMapGroup = new THREE.Group(); 
+        const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x111111 })); 
+        floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; scene.add(floorMesh);
 
-        const mapColliders = []; const buildableSurfaces = []; let currentMapMesh = null;
-        const classicMapGroup = new THREE.Group(); // Do trzymania obiektów mapy proceduralnej
-
-        // Awaryjna podłoga
-        const floorGeo = new THREE.PlaneGeometry(500, 500); const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        const floorMesh = new THREE.Mesh(floorGeo, floorMat); floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; 
-        scene.add(floorMesh);
-
-        function cleanMap() {
-            if (currentMapMesh) scene.remove(currentMapMesh);
-            scene.remove(classicMapGroup);
-            while(classicMapGroup.children.length > 0) classicMapGroup.remove(classicMapGroup.children[0]);
-            
-            mapColliders.length = 0; buildableSurfaces.length = 0;
-            mapColliders.push(floorMesh); buildableSurfaces.push(floorMesh);
-            interactableBlocks.forEach(b => scene.remove(b));
-            interactableBlocks.length = 0; builtBlocksNetwork.length = 0;
-        }
-
-        // --- NOWOŚĆ: MAPA "KLASYK" (RTX Proceduralna) ---
         function generateClassicMap() {
-            cleanMap();
             scene.fog.color.setHex(0x050510);
-            
-            // Lustrzana podłoga (HD RTX vibe)
-            const rtxFloorGeo = new THREE.PlaneGeometry(200, 200);
-            const rtxFloorMat = new THREE.MeshStandardMaterial({ color: 0x11111a, roughness: 0.1, metalness: 0.9 });
-            const rtxFloor = new THREE.Mesh(rtxFloorGeo, rtxFloorMat);
-            rtxFloor.rotation.x = -Math.PI / 2; rtxFloor.receiveShadow = true;
-            classicMapGroup.add(rtxFloor); mapColliders.push(rtxFloor); buildableSurfaces.push(rtxFloor);
-
-            // Świecące obeliski (Bloom Pass sprawi że będą wspaniałe)
+            const rtxFloor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x11111a, roughness: 0.1, metalness: 0.9 }));
+            rtxFloor.rotation.x = -Math.PI / 2; rtxFloor.receiveShadow = true; classicMapGroup.add(rtxFloor); mapColliders.push(rtxFloor);
             const boxGeo = new THREE.BoxGeometry(2, 20, 2);
             for(let i=0; i<30; i++) {
-                // Emissive sprawia, że obiekt sam świeci (Bloom go przechwyci)
                 const isNeon = Math.random() > 0.7;
-                const mat = new THREE.MeshStandardMaterial({ 
-                    color: isNeon ? 0x000000 : 0x222222, 
-                    emissive: isNeon ? new THREE.Color(Math.random(), Math.random(), 1) : 0x000000,
-                    emissiveIntensity: isNeon ? 5 : 0, // Moc światła dla Blooma
-                    roughness: 0.2, metalness: 0.8
-                });
-                const pillar = new THREE.Mesh(boxGeo, mat);
+                const pillar = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: isNeon ? 0x000000 : 0x222222, emissive: isNeon ? new THREE.Color(Math.random(), Math.random(), 1) : 0x000000, emissiveIntensity: isNeon ? 5 : 0, roughness: 0.2, metalness: 0.8 }));
                 pillar.position.set((Math.random()-0.5)*150, 10, (Math.random()-0.5)*150);
-                if (pillar.position.length() < 10) pillar.position.x += 15; // Wolny środek
-                pillar.castShadow = true; pillar.receiveShadow = true;
-                classicMapGroup.add(pillar);
-                
-                pillar.updateMatrixWorld();
-                mapColliders.push(new THREE.Box3().setFromObject(pillar));
+                if (pillar.position.length() < 10) pillar.position.x += 15;
+                classicMapGroup.add(pillar); pillar.updateMatrixWorld(); mapColliders.push(new THREE.Box3().setFromObject(pillar));
             }
-
-            // Centralny kryształ
-            const coreGeo = new THREE.OctahedronGeometry(3, 1);
-            const coreMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00ffff, emissiveIntensity: 10 });
-            const core = new THREE.Mesh(coreGeo, coreMat);
-            core.position.set(0, 8, 0);
-            classicMapGroup.add(core);
-
-            const coreLight = new THREE.PointLight(0x00ffff, 5, 50);
-            coreLight.position.set(0, 8, 0); coreLight.castShadow = true;
-            classicMapGroup.add(coreLight);
-
-            scene.add(classicMapGroup);
-            camera.position.set(0, 2, 20);
-            statusMsg.innerText = "Załadowano mape: HD KLASYK";
-        }
-
-        function loadMap(mapFolderName, sendToNetwork = true) {
-            if (mapFolderName === 'klasyk') {
-                generateClassicMap();
-                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: 'klasyk' });
-                return;
-            }
-
-            statusMsg.innerText = "Ładowanie obszaru: " + mapFolderName + "...";
-            cleanMap();
-
-            loader.load('./models/' + mapFolderName + '/scene.gltf', (gltf) => {
-                currentMapMesh = gltf.scene;
-                currentMapMesh.traverse((node) => {
-                    if (node.isMesh) {
-                        node.receiveShadow = true; node.castShadow = true;
-                        if(node.material) node.material.roughness = 0.8; 
-                        mapColliders.push(node); buildableSurfaces.push(node);
-                    }
-                });
-                currentMapMesh.position.set(0, 0, 0); scene.add(currentMapMesh);
-                camera.position.set(0, 2, 0); statusMsg.innerText = "Mapa zmieniona pomyślnie!";
-                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: mapFolderName });
-            }, undefined, (error) => {
-                console.error("Błąd mapy!", error); statusMsg.innerText = "BŁĄD: Brak mapy!";
-            });
+            scene.add(classicMapGroup); camera.position.set(0, 2, 20);
         }
 
         // --- SYSTEM SIECIOWY ---
@@ -300,86 +321,116 @@
         }
 
         function handleNetworkData(data) {
-            if(data.type === 'init') { setupRemotePlayer(data.nick); if(isHost) conn.send({ type: 'initReply', nick: myNick, blocks: builtBlocksNetwork }); }
-            if(data.type === 'initReply') { setupRemotePlayer(data.nick); if(data.blocks) data.blocks.forEach(b => placeBlock(new THREE.Vector3(b.x, b.y, b.z), false, b.id)); }
+            if(data.type === 'init') { setupRemotePlayer(data.nick); if(isHost) conn.send({ type: 'initReply', nick: myNick }); }
+            if(data.type === 'initReply') { setupRemotePlayer(data.nick); }
             if(data.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(data.x, data.y, data.z); remotePlayerGroup.rotation.y = data.rotY; }
-            if(data.type === 'build') { placeBlock(new THREE.Vector3(data.x, data.y, data.z), false, data.id); }
-            if(data.type === 'destroy') { removeBlockById(data.id, false); }
-            if(data.type === 'music' && isYtReady && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(data.videoId); uiMusicStatus.innerText = "Radiowęzeł Nadaje"; }
-            if(data.type === 'commandMap') { loadMap(data.mapName, false); }
+            if(data.type === 'chat') { addChatMessage(data.nick, data.text, "#00ffff"); } 
         }
 
-        // --- ZMIANA: Na starcie nie ładujemy nic ciężkiego. Po prostu generujemy klasyka ---
-        generateClassicMap();
+        // --- INICJALIZACJA STARTOWA ---
+        document.getElementById('btn-init').addEventListener('click', async () => {
+            document.getElementById('init-screen').style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'flex';
+            
+            await setupAudioSystem(); // Uruchamia system mixowania audio
+            
+            // Szuka piosenki 'lady' i odpala
+            const ladySong = myMusicFiles.find(file => file.toLowerCase().includes('lady'));
+            if (ladySong) { musicPlayer.src = './music/' + ladySong; musicPlayer.volume = 0.5; musicPlayer.play(); }
+            
+            generateClassicMap();
+        });
 
         function enterWorld() {
-            isGameRunning = true; uiMenu.style.display = 'none';
+            isGameRunning = true; uiMenu.style.display = 'none'; chatContainer.style.display = 'flex';
             document.getElementById('login-panels').style.display = 'none'; document.getElementById('pause-panels').style.display = 'flex';
-            uiHud.style.display = 'block'; uiMusicStatus.style.display = 'block'; uiCrosshair.style.display = 'block'; controls.lock();
+            uiHud.style.display = 'block'; uiCrosshair.style.display = 'block'; controls.lock();
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick });
         }
 
-        document.getElementById('btn-create').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Host"; peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; peer.on('open', (id) => { document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; }); peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); });
-        document.getElementById('btn-join').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; peer = new Peer(); statusMsg.innerText = "Łączenie..."; peer.on('open', () => { conn = peer.connect(code); conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); setTimeout(enterWorld, 500); }); }); });
-        document.getElementById('btn-start-host').addEventListener('click', enterWorld);
-        document.getElementById('btn-resume').addEventListener('click', () => { uiMenu.style.display = 'none'; controls.lock(); });
-        document.getElementById('btn-play-music').addEventListener('click', () => { const id = getYouTubeID(document.getElementById('yt-url-input').value); if(id) { if(isYtReady) ytPlayer.loadVideoById(id); uiMusicStatus.innerText = "Radiowęzeł: Kaseta"; if(conn && conn.open) conn.send({ type: 'music', videoId: id }); controls.lock(); } else alert("Zły link!"); });
+        function setupPeerEvents(peerInstance) {
+            peerInstance.on('call', (call) => {
+                console.log("Odbieranie połączenia audio...");
+                // Odpowiadamy naszym zmiksowanym streamem (Mic + Ewentualna Muzyka)
+                call.answer(mixedStreamDestination ? mixedStreamDestination.stream : null); 
+                call.on('stream', (remoteStream) => {
+                    // Magia Proximity Chat: Zamiast odtwarzać to w <audio>, przekazujemy to do Awatara 3D!
+                    remotePositionalAudio.setMediaStreamSource(remoteStream);
+                });
+            });
+        }
 
-        document.getElementById('btn-cmd').addEventListener('click', () => {
-            const cmd = document.getElementById('cmd-input').value.trim().toLowerCase();
-            if (cmd.startsWith('/map ')) {
-                const mapName = cmd.split(' ')[1];
-                if (mapName) { loadMap(mapName, true); controls.lock(); }
-            } else statusMsg.innerText = "Spróbuj /map [nazwa] lub /map klasyk";
-            document.getElementById('cmd-input').value = "";
+        document.getElementById('btn-create').addEventListener('click', () => { 
+            myNick = document.getElementById('my-nick').value || "Host"; 
+            peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; 
+            peer.on('open', (id) => { 
+                document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; 
+                setupPeerEvents(peer);
+            }); 
+            peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); 
         });
 
-        // --- BUDOWANIE (Świecące klocki RTX) ---
-        const raycaster = new THREE.Raycaster();
-        const blockGeo = new THREE.BoxGeometry(1, 1, 1); 
-        const blockMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 2.0, roughness: 0.2 }); 
-        const interactableBlocks = []; const builtBlocksNetwork = [];
+        document.getElementById('btn-join').addEventListener('click', () => { 
+            myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; 
+            peer = new Peer(); statusMsg.innerText = "Łączenie..."; 
+            peer.on('open', () => { 
+                setupPeerEvents(peer);
+                conn = peer.connect(code); 
+                conn.on('open', () => { 
+                    statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); 
+                    
+                    // Dzwonimy do Hosta naszym zmiksowanym sygnałem!
+                    if (mixedStreamDestination) {
+                        const call = peer.call(code, mixedStreamDestination.stream);
+                        call.on('stream', (remoteStream) => {
+                            remotePositionalAudio.setMediaStreamSource(remoteStream);
+                        });
+                    }
+                    setTimeout(enterWorld, 500); 
+                }); 
+            }); 
+        });
 
-        function placeBlock(position, sendToNetwork = true, id = Math.random().toString(36).substr(2, 9)) {
-            const block = new THREE.Mesh(blockGeo, blockMat); block.position.copy(position); block.castShadow = true; block.receiveShadow = true;
-            block.userData = { id: id, isBlock: true }; scene.add(block); interactableBlocks.push(block);
-            if(sendToNetwork) { builtBlocksNetwork.push({x: position.x, y: position.y, z: position.z, id: id}); if (conn && conn.open) conn.send({ type: 'build', x: position.x, y: position.y, z: position.z, id: id }); }
-        }
-        function removeBlockById(id, sendToNetwork = true) {
-            const index = interactableBlocks.findIndex(b => b.userData.id === id);
-            if(index !== -1) { scene.remove(interactableBlocks[index]); interactableBlocks.splice(index, 1); if(sendToNetwork && conn && conn.open) conn.send({ type: 'destroy', id: id }); }
-        }
+        document.getElementById('btn-start-host').addEventListener('click', enterWorld);
+        document.getElementById('btn-resume').addEventListener('click', () => { uiMenu.style.display = 'none'; controls.lock(); });
 
-        window.addEventListener('mousedown', (e) => {
-            if (!controls.isLocked) return;
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            if (e.button === 0) { 
-                const intersects = raycaster.intersectObjects(buildableSurfaces, false);
-                if (intersects.length > 0) placeBlock(intersects[0].point.clone().add(intersects[0].face.normal.clone().multiplyScalar(0.5)), true);
-            } else if (e.button === 2) { 
-                const intersects = raycaster.intersectObjects(interactableBlocks, false);
-                if (intersects.length > 0) removeBlockById(intersects[0].object.userData.id, true);
-            }
+        // --- OBSŁUGA ODTWARZACZA MUZYKI ---
+        document.getElementById('btn-play-local').addEventListener('click', () => {
+            // Gra tylko u mnie (odłączona od miksera sieciowego)
+            // Ponieważ użyliśmy createMediaElementSource, nie możemy go odłączyć od Mixera tak łatwo bez niszczenia struktury.
+            // Najlepszy sposób to po prostu odpalić utwór lokalnie. Puszczamy to cicho.
+            const file = musicSelect.value;
+            if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); }
+        });
+        document.getElementById('btn-share-local').addEventListener('click', () => {
+            // Ponieważ podłączyliśmy musicPlayer do MixedStreamu, zwykły "play" puszcza go do neta!
+            const file = musicSelect.value;
+            if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); }
+            controls.lock(); // Wracamy do gry, muza gra jako boombox!
         });
 
         // --- STEROWANIE ---
         const controls = new PointerLockControls(camera, document.body);
-        controls.addEventListener('unlock', () => { if (isGameRunning) uiMenu.style.display = 'flex'; });
+        controls.addEventListener('unlock', () => { if (isGameRunning && !isChatting) uiMenu.style.display = 'flex'; });
 
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
 
-        document.addEventListener('keydown', (e) => { switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break;} });
-        document.addEventListener('keyup', (e) => { switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; } });
+        document.addEventListener('keydown', (e) => { 
+            if (isChatting) return;
+            if (e.code === 'KeyT' && isGameRunning) { isChatting = true; controls.unlock(); uiMenu.style.display = 'none'; chatInputContainer.style.display = 'block'; setTimeout(() => chatInput.focus(), 10); return; }
+            switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break;} 
+        });
+        document.addEventListener('keyup', (e) => { 
+            if (isChatting) return;
+            switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; } 
+        });
 
         const moveRaycaster = new THREE.Raycaster(); const collisionDistance = 0.6; 
         function checkWallCollision(dir) {
-            const origin = camera.position.clone(); origin.y -= 0.5; 
-            const rotationMatrix = new THREE.Matrix4().extractRotation(camera.matrix);
-            const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize();
-            moveRaycaster.set(origin, moveDirection);
-            const intersects = moveRaycaster.intersectObjects(mapColliders, false);
-            return (intersects.length > 0 && intersects[0].distance < collisionDistance);
+            const origin = camera.position.clone(); origin.y -= 0.5; const rotationMatrix = new THREE.Matrix4().extractRotation(camera.matrix);
+            const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize(); moveRaycaster.set(origin, moveDirection);
+            return (moveRaycaster.intersectObjects(mapColliders, false).length > 0 && moveRaycaster.intersectObjects(mapColliders, false)[0].distance < collisionDistance);
         }
 
         const clock = new THREE.Clock(); let lastSendTime = 0, walkTime = 0;
@@ -387,59 +438,31 @@
         function animate() {
             requestAnimationFrame(animate);
             const delta = Math.min(clock.getDelta(), 0.1);
-
             if (remoteMixer) remoteMixer.update(delta);
 
             if (classicMapGroup.children.length > 0) {
-                const time = clock.getElapsedTime();
-                // Animacja głównego kryształu w mapie klasycznej
-                const core = classicMapGroup.children.find(c => c.geometry && c.geometry.type === "OctahedronGeometry");
+                const time = clock.getElapsedTime(); const core = classicMapGroup.children.find(c => c.geometry && c.geometry.type === "OctahedronGeometry");
                 if (core) { core.rotation.y += delta; core.position.y = 8 + Math.sin(time * 2) * 1; }
             }
 
             if (controls.isLocked) {
                 direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
                 const speedMult = isSprinting ? 35.0 : 15.0; 
-                
-                if(moveF||moveB||moveL||moveR) { 
-                    walkTime += delta * (isSprinting ? 12 : 8); 
-                    camera.position.y = 2 + Math.sin(walkTime) * 0.08; 
-                } else camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
-
+                if(moveF||moveB||moveL||moveR) { walkTime += delta * (isSprinting ? 12 : 8); camera.position.y = 2 + Math.sin(walkTime) * 0.08; } else camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
                 velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
-                if (moveF || moveB) velocity.z -= direction.z * speedMult * delta;
-                if (moveL || moveR) velocity.x -= direction.x * speedMult * delta;
+                if (moveF || moveB) velocity.z -= direction.z * speedMult * delta; if (moveL || moveR) velocity.x -= direction.x * speedMult * delta;
 
                 if (velocity.x !== 0 || velocity.z !== 0) {
                     if(!checkWallCollision(new THREE.Vector3(0, 0, Math.sign(velocity.z)))) controls.moveForward(-velocity.z * delta); else velocity.z = 0; 
                     if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) controls.moveRight(-velocity.x * delta); else velocity.x = 0; 
                 }
 
-                const floorRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
-                const floorIntersects = floorRay.intersectObjects(mapColliders, false);
-                if(floorIntersects.length > 0) {
-                    const distToFloor = floorIntersects[0].distance;
-                    if(distToFloor < 2) camera.position.y += (2 - distToFloor); 
-                    else if (distToFloor > 2.5) camera.position.y -= 5 * delta; 
-                }
-
-                if (conn && conn.open && performance.now() - lastSendTime > 50) {
-                    conn.send({ type: 'move', x: camera.position.x, y: camera.position.y, z: camera.position.z, rotY: camera.rotation.y }); lastSendTime = performance.now();
-                }
+                if (conn && conn.open && performance.now() - lastSendTime > 50) { conn.send({ type: 'move', x: camera.position.x, y: camera.position.y, z: camera.position.z, rotY: camera.rotation.y }); lastSendTime = performance.now(); }
             }
             if(remotePlayerNickSprite) remotePlayerNickSprite.quaternion.copy(camera.quaternion);
-            
-            // ZAMIAST RENDERERA UŻYWAMY COMPOSERA DO EFEKTÓW RTX
             composer.render();
         }
-        window.addEventListener('resize', () => { 
-            camera.aspect = window.innerWidth/window.innerHeight; 
-            camera.updateProjectionMatrix(); 
-            renderer.setSize(window.innerWidth, window.innerHeight); 
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        // Czekamy chwilkę na starcie by mieć pewność że shadery się skompilują
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);});
         setTimeout(animate, 500);
     </script>
 </body>
