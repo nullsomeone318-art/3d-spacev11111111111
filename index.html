@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - The Backrooms (HD)</title>
+    <title>Epika 3D - Konsole & Zmiana Map (Multiplayer)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
@@ -22,9 +22,12 @@
         #hud { position: absolute; bottom: 20px; left: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-left: 3px solid #e6c86e; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace;}
         #music-status { position: absolute; top: 20px; right: 20px; color: #ff3333; font-weight: bold; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #ff3333; z-index: 100; display: none; }
         #yt-player { position: absolute; top: -9999px; left: -9999px; } 
-        
-        /* Efekt zakłóceń dla klimatu */
         .vhs-text { text-shadow: 2px 0 red, -2px 0 blue; }
+
+        /* Konsola deweloperska */
+        #cmd-input { font-family: monospace; color: #00ff00; border-color: #00ff00; }
+        #btn-cmd { border-color: #00ff00; color: #00ff00; }
+        #btn-cmd:hover { background: #00ff00; color: #000; box-shadow: 0 0 15px #00ff00; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
@@ -65,11 +68,19 @@
         <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
             <h2 class="vhs-text" style="color: #fff;">PAUZA</h2>
             <div class="panels-container">
-                <div class="panel"><button id="btn-resume">WZNÓW</button></div>
+                <div class="panel"><button id="btn-resume">WZNÓW GRĘ</button></div>
+                
+                <div class="panel" style="border-color: #00ff00;">
+                    <h3 style="color: #00ff00;">KONSOLA ADMINA</h3>
+                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">Zmień mapę: /map [nazwa_folderu]</p>
+                    <input type="text" id="cmd-input" placeholder="np. /map backrooms"><br>
+                    <button id="btn-cmd">Wykonaj Komendę</button>
+                </div>
+
                 <div class="panel" style="border-color: #ff3333;">
-                    <h3 style="color: #ff3333;">ODTWARZACZ KASETY (YT)</h3>
+                    <h3 style="color: #ff3333;">RADIOWĘZEŁ (YT)</h3>
                     <input type="text" id="yt-url-input" placeholder="Wklej link YouTube"><br>
-                    <button id="btn-play-music" style="border-color: #ff3333; color: #ff3333;">Odtwórz w radiowęźle</button>
+                    <button id="btn-play-music" style="border-color: #ff3333; color: #ff3333;">Odtwórz kasetę</button>
                 </div>
             </div>
         </div>
@@ -90,117 +101,114 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        // --- YOUTUBE API ---
         let ytPlayer; let isYtReady = false;
         const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        window.onYouTubeIframeAPIReady = function() {
-            ytPlayer = new YT.Player('yt-player', { height: '10', width: '10', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }, events: { 'onReady': () => { isYtReady = true; } } });
-        };
+        window.onYouTubeIframeAPIReady = function() { ytPlayer = new YT.Player('yt-player', { height: '10', width: '10', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }, events: { 'onReady': () => { isYtReady = true; } } }); };
         function getYouTubeID(url) { const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
 
         let peer = null, conn = null, myNick = "Wędrowiec", isHost = false, isGameRunning = false;
         let remotePlayerGroup = new THREE.Group(), remotePlayerNickSprite = null, remoteAvatarLoaded = false, remoteMixer = null, remotePlayerExists = false;
+        
         const uiMenu = document.getElementById('menu'), uiHud = document.getElementById('hud'), uiMusicStatus = document.getElementById('music-status');
         const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
         function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
 
-        // --- SCENA 3D I ULEPSZONY RENDERER (HD TEXTURES) ---
+        // --- SCENA 3D ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a05); // Bardzo ciemne, żółtawe tło w razie wyjścia poza mapę
-        scene.fog = new THREE.FogExp2(0x1a1a12, 0.02); // Gęsta, ciemna mgła ukrywająca końce korytarzy
-        
+        scene.background = new THREE.Color(0x0a0a05);
+        scene.fog = new THREE.FogExp2(0x1a1a12, 0.02); 
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        
-        // NOWOŚĆ: Ustawienia HD dla Tekstur i Kolorów
         renderer.outputColorSpace = THREE.SRGBColorSpace; 
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.8; // Zmniejszona ekspozycja dla mrocznego klimatu
+        renderer.toneMappingExposure = 0.8;
         document.body.appendChild(renderer.domElement);
 
-        // --- OŚWIETLENIE KLIMATYCZNE (Mroczne jarzeniówki) ---
-        const ambientLight = new THREE.AmbientLight(0xfff5b5, 0.1); // Bardzo słabe, żółtawe światło
-        scene.add(ambientLight);
-
-        // LATARKA GRACZA (Przyczepiona do kamery)
+        const ambientLight = new THREE.AmbientLight(0xfff5b5, 0.1); scene.add(ambientLight);
         const flashLight = new THREE.SpotLight(0xffffff, 2, 30, Math.PI/4, 0.5, 1);
-        flashLight.position.set(0, 0, 0);
-        flashLight.target.position.set(0, 0, -1);
-        flashLight.castShadow = true;
-        camera.add(flashLight);
-        camera.add(flashLight.target);
-        scene.add(camera); // Ważne, żeby kamera z latarką była w scenie
+        flashLight.position.set(0, 0, 0); flashLight.target.position.set(0, 0, -1); flashLight.castShadow = true;
+        camera.add(flashLight); camera.add(flashLight.target); scene.add(camera);
 
-        // --- ŁADOWANIE MAPY BACKROOMS ---
-        const mapColliders = []; // Zamiast Box3, przechowujemy oryginalne siatki (meshes) mapy do nowej fizyki
+        // --- SYSTEM DYNAMICZNEGO ŁADOWANIA MAPY ---
+        const mapColliders = []; 
         const buildableSurfaces = []; 
-
+        let currentMapMesh = null; // Przechowujemy tu aktywną mapę
         const loader = new GLTFLoader();
-        
-        // Ładujemy Twoje środowisko z nowego folderu
-        loader.load('./models/backrooms/scene.gltf', (gltf) => {
-            const backroomsMap = gltf.scene;
-            
-            backroomsMap.traverse((node) => {
-                if (node.isMesh) {
-                    node.receiveShadow = true;
-                    node.castShadow = true;
-                    // Jeśli materiał jest zbyt błyszczący w Backroomsach, zmniejszamy roughness
-                    if(node.material) {
-                        node.material.roughness = 0.9; 
-                    }
-                    mapColliders.push(node); // Dodajemy do systemu zderzeń ze ścianami!
-                    buildableSurfaces.push(node);
-                }
-            });
-            
-            // Poprawiamy ewentualne złe pozycje modelu mapy
-            backroomsMap.position.set(0, 0, 0); 
-            scene.add(backroomsMap);
-            console.log("HD Map Loaded: Backrooms");
-        }, undefined, (error) => {
-            console.error("Błąd ładowania mapy Backrooms! Sprawdź ścieżkę i wielkość liter na GitHubie.", error);
-            statusMsg.innerText = "Błąd ładowania mapy Backrooms!";
-        });
 
-        // --- AWARYJNA PODŁOGA (Jeśli wyjdziesz poza mapę) ---
-        const floorGeo = new THREE.PlaneGeometry(500, 500);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-        floorMesh.rotation.x = -Math.PI / 2;
-        floorMesh.position.y = -0.5; // Lekko pod mapą
+        // Awaryjna podłoga - nie usuwamy jej nigdy
+        const floorGeo = new THREE.PlaneGeometry(500, 500); const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const floorMesh = new THREE.Mesh(floorGeo, floorMat); floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; 
         scene.add(floorMesh);
-        mapColliders.push(floorMesh);
-        buildableSurfaces.push(floorMesh);
 
-        // --- SYSTEM MULTIPLAYER ---
+        function loadMap(mapFolderName, sendToNetwork = true) {
+            statusMsg.innerText = "Ładowanie obszaru: " + mapFolderName + "...";
+            statusMsg.style.color = "#00ff00";
+
+            // 1. Zniszcz starą mapę (jeśli istnieje)
+            if (currentMapMesh) {
+                scene.remove(currentMapMesh);
+            }
+
+            // 2. Wyczyść fizykę i zostaw tylko podłogę awaryjną
+            mapColliders.length = 0; buildableSurfaces.length = 0;
+            mapColliders.push(floorMesh); buildableSurfaces.push(floorMesh);
+
+            // 3. Wyczyść znaczniki z poprzedniej mapy
+            interactableBlocks.forEach(b => scene.remove(b));
+            interactableBlocks.length = 0;
+            builtBlocksNetwork.length = 0;
+
+            // 4. Załaduj nową
+            loader.load('./models/' + mapFolderName + '/scene.gltf', (gltf) => {
+                currentMapMesh = gltf.scene;
+                currentMapMesh.traverse((node) => {
+                    if (node.isMesh) {
+                        node.receiveShadow = true; node.castShadow = true;
+                        if(node.material) node.material.roughness = 0.9; 
+                        mapColliders.push(node); buildableSurfaces.push(node);
+                    }
+                });
+                currentMapMesh.position.set(0, 0, 0); 
+                scene.add(currentMapMesh);
+                
+                // Teleport gracza na start mapy
+                camera.position.set(0, 2, 0);
+                statusMsg.innerText = "Mapa zmieniona pomyślnie!";
+                
+                // 5. Wyślij komendę do znajomego, jeśli gra z nami
+                if (sendToNetwork && conn && conn.open) {
+                    conn.send({ type: 'commandMap', mapName: mapFolderName });
+                }
+            }, undefined, (error) => {
+                console.error("Nie znaleziono mapy!", error);
+                statusMsg.innerText = "BŁĄD: Mapa '" + mapFolderName + "' nie istnieje!";
+                statusMsg.style.color = "#ff3333";
+            });
+        }
+
+        // --- SYSTEM SIECIOWY ---
         function createTextSprite(msg) {
             const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
             canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64);
             context.fillStyle = "#ff0000"; context.textAlign = "center"; context.fillText(msg, 128, 40);
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) })); sprite.scale.set(5, 1.25, 1); return sprite;
+            return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
         }
 
         function setupRemotePlayer(nick) {
             if (remotePlayerExists) return; remotePlayerExists = true;
-            remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5;
+            remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5; remotePlayerNickSprite.scale.set(5, 1.25, 1);
             remotePlayerGroup.add(remotePlayerNickSprite); scene.add(remotePlayerGroup);
 
-            // Dodajemy małe światło do drugiego gracza, żeby było go widać w ciemności
-            const remoteLight = new THREE.PointLight(0xffaa00, 1, 10);
-            remoteLight.position.y = 1;
-            remotePlayerGroup.add(remoteLight);
-
-            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true}));
-            fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
+            const remoteLight = new THREE.PointLight(0xffaa00, 1, 10); remoteLight.position.y = 1; remotePlayerGroup.add(remoteLight);
+            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true})); fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
 
             loader.load('./models/avatar/scene.gltf', (gltf) => {
-                const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; // Poprawiona wysokość Avatara
+                const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; 
                 avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
                 remotePlayerGroup.remove(fallbackMesh); remotePlayerGroup.add(avatar);
                 if (gltf.animations && gltf.animations.length > 0) { remoteMixer = new THREE.AnimationMixer(avatar); remoteMixer.clipAction(gltf.animations[0]).play(); }
@@ -214,7 +222,12 @@
             if(data.type === 'build') { placeBlock(new THREE.Vector3(data.x, data.y, data.z), false, data.id); }
             if(data.type === 'destroy') { removeBlockById(data.id, false); }
             if(data.type === 'music' && isYtReady && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(data.videoId); uiMusicStatus.innerText = "Radiowęzeł Nadaje"; }
+            // NOWOŚĆ: Synchronizacja komendy z serwera
+            if(data.type === 'commandMap') { loadMap(data.mapName, false); }
         }
+
+        // STARTUJEMY Z MAPĄ BACKROOMS
+        loadMap('backrooms', false);
 
         function enterWorld() {
             isGameRunning = true; uiMenu.style.display = 'none';
@@ -223,6 +236,7 @@
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick });
         }
 
+        // --- OBSŁUGA MENU ---
         document.getElementById('btn-create').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Host";
             peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie połączenia...";
@@ -239,24 +253,38 @@
 
         document.getElementById('btn-start-host').addEventListener('click', enterWorld);
         document.getElementById('btn-resume').addEventListener('click', () => { uiMenu.style.display = 'none'; controls.lock(); });
+        
         document.getElementById('btn-play-music').addEventListener('click', () => {
             const id = getYouTubeID(document.getElementById('yt-url-input').value);
             if(id) { if(isYtReady) ytPlayer.loadVideoById(id); uiMusicStatus.innerText = "Radiowęzeł: Twoja Kaseta"; if(conn && conn.open) conn.send({ type: 'music', videoId: id }); controls.lock(); } else alert("Zły link!");
         });
 
-        // --- SYSTEM "MARKERÓW" (Zamiast klocków budujemy np. ślady w Backrooms) ---
+        // KONSOLA ADMINA W UI
+        document.getElementById('btn-cmd').addEventListener('click', () => {
+            const cmd = document.getElementById('cmd-input').value.trim().toLowerCase();
+            if (cmd.startsWith('/map ')) {
+                const mapName = cmd.split(' ')[1]; // Wyciąga np. "las" z "/map las"
+                if (mapName) {
+                    loadMap(mapName, true); // true = wyślij do drugiego gracza
+                    controls.lock(); // Zamknij menu i wróć do gry
+                }
+            } else {
+                statusMsg.innerText = "Nieznana komenda! Spróbuj /map [nazwa]";
+            }
+            document.getElementById('cmd-input').value = ""; // Wyczyść pole po kliknięciu
+        });
+
+
+        // --- MARKERY ---
         const raycaster = new THREE.Raycaster();
-        const blockGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5); // Małe znaczniki
-        const blockMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 }); 
-        const interactableBlocks = [];
-        const builtBlocksNetwork = [];
+        const blockGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5); const blockMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 }); 
+        const interactableBlocks = []; const builtBlocksNetwork = [];
 
         function placeBlock(position, sendToNetwork = true, id = Math.random().toString(36).substr(2, 9)) {
             const block = new THREE.Mesh(blockGeo, blockMat); block.position.copy(position); block.castShadow = true; block.receiveShadow = true;
             block.userData = { id: id, isBlock: true }; scene.add(block); interactableBlocks.push(block);
             if(sendToNetwork) { builtBlocksNetwork.push({x: position.x, y: position.y, z: position.z, id: id}); if (conn && conn.open) conn.send({ type: 'build', x: position.x, y: position.y, z: position.z, id: id }); }
         }
-
         function removeBlockById(id, sendToNetwork = true) {
             const index = interactableBlocks.findIndex(b => b.userData.id === id);
             if(index !== -1) { scene.remove(interactableBlocks[index]); interactableBlocks.splice(index, 1); if(sendToNetwork && conn && conn.open) conn.send({ type: 'destroy', id: id }); }
@@ -267,10 +295,7 @@
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             if (e.button === 0) { 
                 const intersects = raycaster.intersectObjects(buildableSurfaces, false);
-                if (intersects.length > 0) {
-                    const i = intersects[0]; const pos = i.point.clone().add(i.face.normal.clone().multiplyScalar(0.25));
-                    placeBlock(pos, true);
-                }
+                if (intersects.length > 0) placeBlock(intersects[0].point.clone().add(intersects[0].face.normal.clone().multiplyScalar(0.25)), true);
             } else if (e.button === 2) { 
                 const intersects = raycaster.intersectObjects(interactableBlocks, false);
                 if (intersects.length > 0) removeBlockById(intersects[0].object.userData.id, true);
@@ -280,42 +305,23 @@
         // --- STEROWANIE ---
         const controls = new PointerLockControls(camera, document.body);
         controls.addEventListener('unlock', () => { if (isGameRunning) uiMenu.style.display = 'flex'; });
-        camera.position.set(0, 2, 0); // Startowa pozycja - upewnij się, że Twoja mapa Backrooms ma tu podłogę!
 
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
 
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break;}
-        });
-        document.addEventListener('keyup', (e) => {
-            switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; }
-        });
+        document.addEventListener('keydown', (e) => { switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break;} });
+        document.addEventListener('keyup', (e) => { switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; } });
 
-        // --- NOWA FIZYKA (RAYCAST COLLISION) DLA WGRANYCH MAP ---
-        const moveRaycaster = new THREE.Raycaster();
-        const collisionDistance = 0.6; // Jak blisko ściany możesz podejść
-
+        const moveRaycaster = new THREE.Raycaster(); const collisionDistance = 0.6; 
         function checkWallCollision(dir) {
-            // Strzelamy promieniem z klatki piersiowej gracza w stronę ruchu
-            const origin = camera.position.clone();
-            origin.y -= 0.5; 
-            
-            // Konwertujemy kierunek ruchu gracza (np. W = przód) na realny kąt kamery
+            const origin = camera.position.clone(); origin.y -= 0.5; 
             const rotationMatrix = new THREE.Matrix4().extractRotation(camera.matrix);
             const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize();
-
             moveRaycaster.set(origin, moveDirection);
-            // Wykrywamy ściany mapy Backrooms
             const intersects = moveRaycaster.intersectObjects(mapColliders, false);
-            
-            if (intersects.length > 0 && intersects[0].distance < collisionDistance) {
-                return true; // Jest ściana przed nami!
-            }
-            return false;
+            return (intersects.length > 0 && intersects[0].distance < collisionDistance);
         }
 
-        // --- PĘTLA GRY ---
         const clock = new THREE.Clock(); let lastSendTime = 0, walkTime = 0;
 
         function animate() {
@@ -326,45 +332,28 @@
 
             if (controls.isLocked) {
                 direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
-                const speedMult = isSprinting ? 25.0 : 12.0; // W backroomsach chodzi się wolniej, straszniej
+                const speedMult = isSprinting ? 25.0 : 12.0; 
                 
                 if(moveF||moveB||moveL||moveR) { 
                     walkTime += delta * (isSprinting ? 12 : 8); 
-                    camera.position.y = 2 + Math.sin(walkTime) * 0.08; // Headbobbing
-                } else {
-                    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
-                }
+                    camera.position.y = 2 + Math.sin(walkTime) * 0.08; 
+                } else camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
 
                 velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
                 if (moveF || moveB) velocity.z -= direction.z * speedMult * delta;
                 if (moveL || moveR) velocity.x -= direction.x * speedMult * delta;
 
-                // --- TESTOWANIE NOWEJ KOLIZJI ZE ŚCIANAMI ---
                 if (velocity.x !== 0 || velocity.z !== 0) {
-                    const moveVec = new THREE.Vector3(velocity.x * delta, 0, velocity.z * delta);
-                    
-                    // Sprawdzamy samą oś Z (Przód/Tył)
-                    if(!checkWallCollision(new THREE.Vector3(0, 0, Math.sign(velocity.z)))) {
-                        controls.moveForward(-velocity.z * delta);
-                    } else {
-                        velocity.z = 0; // Uderzenie w ścianę
-                    }
-
-                    // Sprawdzamy samą oś X (Prawo/Lewo)
-                    if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) {
-                        controls.moveRight(-velocity.x * delta);
-                    } else {
-                        velocity.x = 0; // Uderzenie w ścianę
-                    }
+                    if(!checkWallCollision(new THREE.Vector3(0, 0, Math.sign(velocity.z)))) controls.moveForward(-velocity.z * delta); else velocity.z = 0; 
+                    if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) controls.moveRight(-velocity.x * delta); else velocity.x = 0; 
                 }
 
-                // Spadanie / Utrzymanie wysokości
                 const floorRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
                 const floorIntersects = floorRay.intersectObjects(mapColliders, false);
                 if(floorIntersects.length > 0) {
                     const distToFloor = floorIntersects[0].distance;
-                    if(distToFloor < 2) camera.position.y += (2 - distToFloor); // Schody/Górki
-                    else if (distToFloor > 2.5) camera.position.y -= 5 * delta; // Spadek
+                    if(distToFloor < 2) camera.position.y += (2 - distToFloor); 
+                    else if (distToFloor > 2.5) camera.position.y -= 5 * delta; 
                 }
 
                 if (conn && conn.open && performance.now() - lastSendTime > 50) {
