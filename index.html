@@ -3,124 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Multi, Optymalizacja & Audio</title>
+    <title>Epika 3D - Stabilna Wersja</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
-        
-        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; text-align: center; }
-        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; margin-top: 20px;}
-        #btn-init:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px #00ffff; }
-        
-        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
-        #loading-bar-container { width: 300px; height: 10px; background: #222; border-radius: 5px; margin-top: 20px; overflow: hidden; border: 1px solid #00ffff; }
-        #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 10px #00ffff; transition: width 0.1s; }
-
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
-        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(15px); color: #00ffff; z-index: 200; display: none; }
-        .panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #00ffff; border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 320px; }
-        .panels-container { display: flex; flex-wrap: wrap; justify-content: center; max-width: 1200px; }
-        input, select { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px; }
-        #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
-        button { padding: 12px 20px; font-size: 16px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
-        button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
-        #my-code-display { font-size: 32px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s; }
+        #loading-bar-wrap { width: 300px; height: 4px; background: #222; margin-top: 20px; border-radius: 2px; }
+        #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 10px #00ffff; transition: width 0.2s; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; }
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); color: #00ffff; z-index: 200; }
+        .panel { background: rgba(20,20,20,0.9); padding: 20px; border: 1px solid #00ffff; border-radius: 10px; text-align: center; margin: 10px; width: 300px; }
+        input, select { padding: 10px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; width: 80%; border-radius: 5px; text-align: center; }
+        button { padding: 12px 20px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: 100%; margin-top: 5px; }
+        button:hover { background: #00ffff; color: #000; }
+        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 350px; z-index: 150; display: none; pointer-events: none; }
+        #chat-messages { height: 200px; background: rgba(0,0,0,0.4); overflow-y: auto; color: white; padding: 10px; margin-bottom: 5px; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end;}
+        #chat-input { width: 100%; padding: 10px; background: rgba(0,0,0,0.8); border: 1px solid #00ffff; color: white; pointer-events: auto; }
         .hidden { display: none !important; }
-        
-        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 10px; border-right: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; line-height: 1.5; font-family: monospace; text-align: right;}
-        
-        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 350px; height: 250px; display: none; flex-direction: column; z-index: 150; }
-        #chat-messages { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 5px; padding: 10px; overflow-y: auto; color: white; font-family: sans-serif; font-size: 14px; margin-bottom: 5px; display: flex; flex-direction: column; justify-content: flex-end;}
-        #chat-input-container { display: none; }
-        #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #00ffff; color: white; border-radius: 5px; }
-        .msg-line { margin-bottom: 5px; text-shadow: 1px 1px 2px black;}
-        .msg-nick { font-weight: bold; color: #00ffff; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <audio id="local-music-player" loop crossorigin="anonymous"></audio>
 
-    <div id="init-screen">
-        <h1 style="font-size: 3em; text-shadow: 0 0 20px #00ffff; margin-bottom: 0;">EPIKA 3D</h1>
-        <p style="color: #aaa;">System komunikacji i audio 3D wymaga włączenia</p>
-        <button id="btn-init">ZAINICJUJ GRĘ</button>
-    </div>
-
     <div id="loading-screen">
-        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE...</h1>
-        <p style="color: #aaa; margin-top: 5px;">Pobieranie plików z serwera</p>
-        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+        <h1 style="text-shadow: 0 0 20px #00ffff;">PRE-LOADING MODELS</h1>
+        <p id="load-status">Inicjalizacja zasobów HD...</p>
+        <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
     </div>
 
     <div id="crosshair"></div>
-    <div id="hud">
-        <b>[T]</b>: Czat | <b>[ESC]</b>: Pauza/Menu<br>
-        <b>LPM</b>: Zbuduj | <b>PPM</b>: Zniszcz<br>
-        <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
-    </div>
 
     <div id="chat-container">
         <div id="chat-messages"></div>
-        <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Napisz i wciśnij ENTER..." autocomplete="off">
-        </div>
+        <input type="text" id="chat-input" class="hidden" placeholder="Naciśnij Enter aby wysłać...">
     </div>
 
     <div id="menu">
-        <h1 style="margin-bottom: 5px; font-size: 4em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
+        <h1 style="font-size: 3em; text-shadow: 0 0 15px #00ffff; margin-bottom: 20px;">EPIKA 3D</h1>
         
-        <div id="login-panels" style="display: flex; flex-direction: column; align-items: center;">
-            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Wędrowiec">
-            <div class="panels-container">
-                <div class="panel" id="host-panel">
-                    <h3>ZAŁÓŻ SERWER</h3>
-                    <button id="btn-create">Generuj Kod</button>
-                    <div id="code-container" class="hidden">
-                        <p style="font-size: 12px; color: #aaa;">Kod dla grupy:</p>
-                        <div id="my-code-display"></div>
-                        <button id="btn-start-host">Rozpocznij Grę</button>
-                    </div>
-                </div>
-                <div class="panel" id="join-panel">
-                    <h3>DOŁĄCZ DO GRUPY</h3>
-                    <input type="text" id="join-code-input" placeholder="Wpisz kod (5 znaków)" maxlength="5"><br>
-                    <button id="btn-join">Dołącz</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
-            <h2 style="color: #fff; text-shadow: 0 0 10px #fff;">PAUZA</h2>
-            <div class="panels-container">
+        <div id="login-ui">
+            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Gracz">
+            <div style="display:flex;">
                 <div class="panel">
-                    <button id="btn-resume" style="background: #00ffff; color:#000;">WZNÓW GRĘ</button>
+                    <h3>HOST</h3>
+                    <button id="btn-create">Generuj Kod</button>
+                    <div id="my-code-display" style="font-size:24px; color:#ff00ff; margin:10px 0;"></div>
+                    <button id="btn-start-game" class="hidden">WEJDŹ DO GRY</button>
                 </div>
-                
-                <div class="panel" style="border-color: #00ffaa;">
-                    <h3 style="color: #00ffaa;">PROXIMITY CHAT</h3>
-                    <button id="btn-toggle-mic" style="border-color: #00ffaa; color: #00ffaa;">Wyłącz Mikrofon</button>
-                    <button id="btn-toggle-sound" style="border-color: #00ffaa; color: #00ffaa;">Odcisz Wszystkich</button>
-                </div>
-
-                <div class="panel" style="border-color: #ffff00;">
-                    <h3 style="color: #ffff00;">BOOMBOX SERWEROWY</h3>
-                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">Pliki z folderu /music/ na GitHubie</p>
-                    <select id="music-select">
-                        <option value="">-- Wybierz piosenkę --</option>
-                    </select>
-                    <button id="btn-play-local" style="border-color: #ffff00; color: #ffff00;">Graj w mojej głowie</button>
-                    <button id="btn-share-local" style="border-color: #ffff00; color: #ffff00;">Nadawaj jako Boombox!</button>
-                </div>
-
-                <div class="panel" style="border-color: #ff00ff;">
-                    <h3 style="color: #ff00ff;">KONSOLA ADMINA</h3>
-                    <input type="text" id="cmd-input" placeholder="np. /map klasyk" style="border-color: #ff00ff;"><br>
-                    <button id="btn-cmd" style="border-color: #ff00ff; color: #ff00ff;">Wykonaj Komendę</button>
+                <div class="panel">
+                    <h3>DOŁĄCZ</h3>
+                    <input type="text" id="join-code" placeholder="KOD">
+                    <button id="btn-join">POŁĄCZ I GRAJ</button>
                 </div>
             </div>
+            <button id="btn-offline" style="width:200px; margin-top:20px; border-color:#888; color:#888;">Graj Offline (Solo)</button>
         </div>
-        <p id="status-msg" style="margin-top: 15px; color: #00ffff; font-weight: bold;"></p>
+
+        <div id="pause-ui" class="hidden">
+            <div class="panel">
+                <button id="btn-resume">WZNÓW GRĘ</button>
+                <h3 style="color:#ffff00; margin-top:20px;">BOOMBOX</h3>
+                <select id="music-select"></select>
+                <button id="btn-play-music" style="border-color:#ffff00; color:#ffff00;">GRAJ DLA WSZYSTKICH</button>
+            </div>
+        </div>
     </div>
 
     <script type="importmap">
@@ -135,304 +82,230 @@
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // =========================================================================
-        // TUTAJ WPISZ DOKŁADNE NAZWY SWOICH PIOSENEK (Z folderu /music/ na GitHubie)
-        // =========================================================================
-        const myMusicFiles = [
-            "lady_gaga.mp3",  
-            "inna_piosenka.mp3",
-            "backrooms_ambient.wav"
-        ];
-
-        // Automatyczne wypełnianie listy piosenek
+        // --- KONFIGURACJA MUZYKI ---
+        const myMusicFiles = ["lady_gaga.mp3", "backrooms.mp3"]; // WPISZ SWOJE NAZWY PLIKÓW TUTAJ
         const musicSelect = document.getElementById('music-select');
-        myMusicFiles.forEach(file => {
-            let option = document.createElement('option');
-            option.value = file; option.text = file;
-            musicSelect.appendChild(option);
-        });
+        myMusicFiles.forEach(f => { let o = document.createElement('option'); o.value=f; o.text=f; musicSelect.appendChild(o); });
         const musicPlayer = document.getElementById('local-music-player');
 
-        // --- ZMIENNE GLOBALNE ---
-        let peer = null, conn = null, myNick = "Wędrowiec", isHost = false, isGameRunning = false;
-        let remotePlayerGroup = new THREE.Group(), remotePlayerNickSprite = null, remoteAvatarLoaded = false, remoteMixer = null, remotePlayerExists = false;
-        
-        const uiMenu = document.getElementById('menu'), uiHud = document.getElementById('hud');
-        const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
-        function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
+        // --- ZMIENNE SILNIKA ---
+        let peer = null, conn = null, myNick = "Gracz", isGameRunning = false;
+        let remotePlayerGroup = new THREE.Group(), remoteMixer = null, remoteAvatarLoaded = false;
+        const mapColliders = [], interactableBlocks = [];
 
-        // --- SCENA 3D I AUDIO 3D ---
+        // --- SCENA I RENDERER (OPTYMALIZACJA) ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050508);
-        scene.fog = new THREE.FogExp2(0x050508, 0.015); 
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
-        
+        scene.background = new THREE.Color(0x020205);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const audioListener = new THREE.AudioListener(); camera.add(audioListener);
-        const remotePositionalAudio = new THREE.PositionalAudio(audioListener);
-        remotePositionalAudio.setRefDistance(5); remotePositionalAudio.setMaxDistance(50); remotePositionalAudio.setRolloffFactor(2); 
-        remotePlayerGroup.add(remotePositionalAudio); 
+        const remotePosAudio = new THREE.PositionalAudio(audioListener);
+        remotePosAudio.setRefDistance(5); remotePlayerGroup.add(remotePosAudio);
 
-        // OPTYMALIZACJA: antialias: false zabija lagi, PixelRatio ograniczone do max 1.5
         const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
-        
-        renderer.shadowMap.enabled = true; 
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputColorSpace = THREE.SRGBColorSpace; 
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2)); // LIMIT LAGÓW
+        renderer.shadowMap.enabled = true;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        const renderScene = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2; bloomPass.strength = 1.0; bloomPass.radius = 0.5;
-        const composer = new EffectComposer(renderer); composer.addPass(renderScene); composer.addPass(bloomPass);
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.85));
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambientLight);
-        camera.position.set(0, 2, 0); scene.add(camera);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.3); scene.add(ambient);
+        const flashLight = new THREE.SpotLight(0xffffff, 4, 30, 0.6, 0.5, 1);
+        camera.add(flashLight); flashLight.target.position.set(0,0,-1); camera.add(flashLight.target);
+        scene.add(camera);
 
-        // --- ZAAWANSOWANY MIXER AUDIO ---
-        let localMicStream = null, mixedStreamDestination = null, isMicMuted = false, isDeafened = false;
-
-        async function setupAudioSystem() {
-            if (audioListener.context.state === 'suspended') await audioListener.context.resume();
-            try {
-                localMicStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                const audioCtx = audioListener.context;
-                mixedStreamDestination = audioCtx.createMediaStreamDestination();
-                const micSourceNode = audioCtx.createMediaStreamSource(localMicStream); micSourceNode.connect(mixedStreamDestination);
-                const musicSourceNode = audioCtx.createMediaElementSource(musicPlayer);
-                musicSourceNode.connect(mixedStreamDestination); musicSourceNode.connect(audioCtx.destination);   
-            } catch (err) { console.warn("Brak mikrofonu. Proximity Chat nie zadziała.", err); }
-        }
-
-        document.getElementById('btn-toggle-mic').addEventListener('click', (e) => {
-            if(localMicStream) { isMicMuted = !isMicMuted; localMicStream.getAudioTracks()[0].enabled = !isMicMuted; e.target.innerText = isMicMuted ? "Włącz Mikrofon" : "Wyłącz Mikrofon"; e.target.style.color = isMicMuted ? "red" : "#00ffaa"; }
-        });
-        document.getElementById('btn-toggle-sound').addEventListener('click', (e) => {
-            isDeafened = !isDeafened; remotePositionalAudio.setVolume(isDeafened ? 0 : 1); e.target.innerText = isDeafened ? "Odcisz Wszystkich" : "Wycisz Wszystkich"; e.target.style.color = isDeafened ? "red" : "#00ffaa";
-        });
-
-        // --- CZAT TEKSTOWY ---
-        const chatContainer = document.getElementById('chat-container'), chatMessages = document.getElementById('chat-messages');
-        const chatInputContainer = document.getElementById('chat-input-container'), chatInput = document.getElementById('chat-input');
-        let isChatting = false;
-
-        function addChatMessage(sender, text, color = "#00ffff") {
-            const div = document.createElement('div'); div.className = "msg-line"; div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
-            chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const txt = chatInput.value.trim();
-                if (txt !== '') { addChatMessage(myNick, txt, "#00ff00"); if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); chatInput.value = ''; }
-                isChatting = false; chatInputContainer.style.display = 'none'; controls.lock();
-            }
-        });
-
-        // --- SYSTEM ŁADOWANIA (Automatyczny, bez wymuszania) ---
+        // --- MANAGER ŁADOWANIA (OFFLINE FIRST) ---
         const manager = new THREE.LoadingManager();
-        manager.onProgress = function (url, loaded, total) { 
-            document.getElementById('loading-bar').style.width = ((loaded / total) * 100) + '%'; 
-        };
-        manager.onLoad = function () { 
-            const ls = document.getElementById('loading-screen'); 
-            ls.style.opacity = '0'; 
-            setTimeout(() => { 
-                ls.style.display = 'none'; 
-                if(!isGameRunning) uiMenu.style.display = 'flex'; 
-            }, 500); 
-        };
-
         const loader = new GLTFLoader(manager);
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-        loader.setDRACOLoader(dracoLoader);
+        
+        manager.onProgress = (url, loaded, total) => {
+            let p = (loaded/total)*100;
+            document.getElementById('loading-bar').style.width = p + '%';
+            document.getElementById('load-status').innerText = `Pobieranie: ${Math.round(p)}%`;
+        };
 
-        const mapColliders = []; const classicMapGroup = new THREE.Group(); 
-        const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x111111 })); 
-        floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; scene.add(floorMesh);
+        manager.onLoad = () => {
+            document.getElementById('loading-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('menu').style.display = 'flex';
+                // Autoplay "lady" music if exists
+                let lady = myMusicFiles.find(f => f.toLowerCase().includes('lady'));
+                if(lady) { musicPlayer.src = './music/'+lady; musicPlayer.play().catch(()=>{}); }
+            }, 500);
+        };
 
-        function generateClassicMap() {
-            scene.fog.color.setHex(0x050510);
-            const rtxFloor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x11111a, roughness: 0.1, metalness: 0.9 }));
-            rtxFloor.rotation.x = -Math.PI / 2; rtxFloor.receiveShadow = true; classicMapGroup.add(rtxFloor); mapColliders.push(rtxFloor);
-            const boxGeo = new THREE.BoxGeometry(2, 20, 2);
-            for(let i=0; i<30; i++) {
-                const isNeon = Math.random() > 0.7;
-                const pillar = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: isNeon ? 0x000000 : 0x222222, emissive: isNeon ? new THREE.Color(Math.random(), Math.random(), 1) : 0x000000, emissiveIntensity: isNeon ? 5 : 0, roughness: 0.2, metalness: 0.8 }));
-                pillar.position.set((Math.random()-0.5)*150, 10, (Math.random()-0.5)*150); if (pillar.position.length() < 10) pillar.position.x += 15;
-                classicMapGroup.add(pillar); pillar.updateMatrixWorld(); mapColliders.push(new THREE.Box3().setFromObject(pillar));
-            }
-            scene.add(classicMapGroup); camera.position.set(0, 2, 20);
-        }
-
-        let currentMapMesh = null;
-        function loadMap(mapFolderName, sendToNetwork = true) {
-            if (currentMapMesh) scene.remove(currentMapMesh);
-            scene.remove(classicMapGroup); while(classicMapGroup.children.length > 0) classicMapGroup.remove(classicMapGroup.children[0]);
-            mapColliders.length = 0; mapColliders.push(floorMesh); 
-            
-            if (mapFolderName === 'klasyk') {
-                generateClassicMap();
-                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: 'klasyk' });
-                return;
-            }
-
-            document.getElementById('loading-screen').style.display = 'flex';
-            document.getElementById('loading-screen').style.opacity = '1';
-
-            loader.load('./models/' + mapFolderName + '/scene.gltf', (gltf) => {
-                currentMapMesh = gltf.scene;
-                currentMapMesh.traverse((node) => { if (node.isMesh) { node.receiveShadow = true; node.castShadow = true; mapColliders.push(node); } });
-                currentMapMesh.position.set(0, 0, 0); scene.add(currentMapMesh);
-                camera.position.set(0, 2, 0);
-                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: mapFolderName });
+        // --- MAPY ---
+        let currentMap = null;
+        function loadMap(name) {
+            if(currentMap) scene.remove(currentMap);
+            mapColliders.length = 0;
+            loader.load(`./models/${name}/scene.gltf`, (gltf) => {
+                currentMap = gltf.scene;
+                currentMap.traverse(n => { if(n.isMesh) { n.receiveShadow = true; mapColliders.push(n); }});
+                scene.add(currentMap);
+                camera.position.set(0,2,0);
             });
         }
 
-        // --- SYSTEM SIECIOWY ---
-        function createTextSprite(msg) {
-            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d'); canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64); context.fillStyle = "#00ffff"; context.textAlign = "center"; context.fillText(msg, 128, 40);
-            return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-        }
-
-        function setupRemotePlayer(nick) {
-            if (remotePlayerExists) return; remotePlayerExists = true;
-            remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5; remotePlayerNickSprite.scale.set(5, 1.25, 1);
-            remotePlayerGroup.add(remotePlayerNickSprite); scene.add(remotePlayerGroup);
-            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0x00ffff, wireframe: true})); fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
-
+        // --- LOGIKA MULTIPLAYER ---
+        function setupRemote(nick) {
+            if(remoteAvatarLoaded) return;
+            const sprite = createNickSprite(nick); sprite.position.y = 2.5; remotePlayerGroup.add(sprite);
+            const fallback = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), new THREE.MeshBasicMaterial({color:0x00ffff, wireframe:true}));
+            fallback.position.y = 1; remotePlayerGroup.add(fallback);
+            scene.add(remotePlayerGroup);
             loader.load('./models/avatar/scene.gltf', (gltf) => {
-                const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-                remotePlayerGroup.remove(fallbackMesh); remotePlayerGroup.add(avatar);
-                if (gltf.animations && gltf.animations.length > 0) { remoteMixer = new THREE.AnimationMixer(avatar); remoteMixer.clipAction(gltf.animations[0]).play(); }
+                const av = gltf.scene; av.position.y = 0; remotePlayerGroup.remove(fallback); remotePlayerGroup.add(av);
+                if(gltf.animations.length > 0) { remoteMixer = new THREE.AnimationMixer(av); remoteMixer.clipAction(gltf.animations[0]).play(); }
+                remoteAvatarLoaded = true;
             });
         }
 
-        function handleNetworkData(data) {
-            if(data.type === 'init') { setupRemotePlayer(data.nick); if(isHost) conn.send({ type: 'initReply', nick: myNick }); }
-            if(data.type === 'initReply') { setupRemotePlayer(data.nick); }
-            if(data.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(data.x, data.y, data.z); remotePlayerGroup.rotation.y = data.rotY; }
-            if(data.type === 'chat') { addChatMessage(data.nick, data.text, "#00ffff"); } 
-            if(data.type === 'commandMap') { loadMap(data.mapName, false); }
-            if(data.type === 'music') { 
-                musicPlayer.src = './music/' + data.fileName;
-                musicPlayer.play().catch(e => console.log(e));
-            }
+        function createNickSprite(name) {
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            canvas.width = 256; canvas.height = 64; ctx.fillStyle = "#00ffff"; ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center"; ctx.fillText(name, 128, 45);
+            const tex = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex})); sprite.scale.set(4,1,1); return sprite;
         }
 
-        document.getElementById('btn-init').addEventListener('click', async () => {
-            document.getElementById('init-screen').style.display = 'none'; document.getElementById('loading-screen').style.display = 'flex';
-            await setupAudioSystem();
-            
-            const ladySong = myMusicFiles.find(file => file.toLowerCase().includes('lady'));
-            if (ladySong) { musicPlayer.src = './music/' + ladySong; musicPlayer.volume = 0.5; musicPlayer.play(); }
-            
-            generateClassicMap();
-            setTimeout(() => { if(document.getElementById('loading-screen').style.display !== 'none') manager.onLoad(); }, 1500);
-        });
-
-        function enterWorld() {
-            isGameRunning = true; uiMenu.style.display = 'none'; chatContainer.style.display = 'flex';
-            document.getElementById('login-panels').style.display = 'none'; document.getElementById('pause-panels').style.display = 'flex';
-            uiHud.style.display = 'block'; uiCrosshair.style.display = 'block'; controls.lock();
-            if(conn && conn.open) conn.send({ type: 'init', nick: myNick });
-        }
-
-        function setupPeerEvents(peerInstance) {
-            peerInstance.on('call', (call) => {
-                call.answer(mixedStreamDestination ? mixedStreamDestination.stream : null); 
-                call.on('stream', (remoteStream) => { remotePositionalAudio.setMediaStreamSource(remoteStream); });
-            });
-        }
-
-        document.getElementById('btn-create').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Host"; peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; peer.on('open', (id) => { document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; setupPeerEvents(peer); }); peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); });
-        document.getElementById('btn-join').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; peer = new Peer(); statusMsg.innerText = "Łączenie..."; peer.on('open', () => { setupPeerEvents(peer); conn = peer.connect(code); conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); if (mixedStreamDestination) { const call = peer.call(code, mixedStreamDestination.stream); call.on('stream', (remoteStream) => { remotePositionalAudio.setMediaStreamSource(remoteStream); }); } setTimeout(enterWorld, 500); }); }); });
-
-        // --- NAPRAWIONY KLAWISZ ESC (PAUZA) ---
+        // --- STEROWANIE I FIZYKA ---
         const controls = new PointerLockControls(camera, document.body);
-        controls.addEventListener('unlock', () => { 
-            if (isGameRunning && !isChatting) {
-                uiMenu.style.display = 'flex'; 
-                document.getElementById('pause-panels').style.display = 'flex';
-                document.getElementById('login-panels').style.display = 'none';
-                uiHud.style.display = 'none';
-                uiCrosshair.style.display = 'none';
-            }
-        });
-        
-        document.getElementById('btn-resume').addEventListener('click', () => { 
-            uiMenu.style.display = 'none'; 
-            uiHud.style.display = 'block';
-            uiCrosshair.style.display = 'block';
-            controls.lock(); 
-        });
-
-        document.getElementById('btn-start-host').addEventListener('click', enterWorld);
-        document.getElementById('btn-cmd').addEventListener('click', () => { const cmd = document.getElementById('cmd-input').value.trim().toLowerCase(); if (cmd.startsWith('/map ')) { const mapName = cmd.split(' ')[1]; if (mapName) { loadMap(mapName, true); controls.lock(); } } document.getElementById('cmd-input').value = ""; });
-        
-        document.getElementById('btn-play-local').addEventListener('click', () => { const file = musicSelect.value; if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); } });
-        document.getElementById('btn-share-local').addEventListener('click', () => { const file = musicSelect.value; if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); if(conn && conn.open) conn.send({ type: 'music', fileName: file }); controls.lock(); } });
-
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
-        let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
+        let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false, isChatting = false;
 
-        document.addEventListener('keydown', (e) => { 
-            if (isChatting) return;
-            if (e.code === 'KeyT' && isGameRunning) { isChatting = true; controls.unlock(); uiMenu.style.display = 'none'; chatInputContainer.style.display = 'block'; setTimeout(() => chatInput.focus(), 10); return; }
-            switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break;} 
+        document.addEventListener('keydown', (e) => {
+            if(isChatting && e.key !== 'Enter') return;
+            if(e.code === 'KeyT' && isGameRunning) { isChatting = true; document.getElementById('chat-input').classList.remove('hidden'); document.getElementById('chat-input').focus(); controls.unlock(); return; }
+            switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break; }
         });
-        document.addEventListener('keyup', (e) => { 
-            if (isChatting) return;
-            switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; } 
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; }
         });
 
-        const moveRaycaster = new THREE.Raycaster(); const collisionDistance = 0.6; 
-        function checkWallCollision(dir) {
-            const origin = camera.position.clone(); origin.y -= 0.5; const rotationMatrix = new THREE.Matrix4().extractRotation(camera.matrix);
-            const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize(); moveRaycaster.set(origin, moveDirection);
-            return (moveRaycaster.intersectObjects(mapColliders, false).length > 0 && moveRaycaster.intersectObjects(mapColliders, false)[0].distance < collisionDistance);
+        const ray = new THREE.Raycaster();
+        function canMove(dir) {
+            const rot = new THREE.Matrix4().extractRotation(camera.matrix);
+            const d = dir.clone().applyMatrix4(rot).normalize();
+            ray.set(camera.position, d);
+            const hit = ray.intersectObjects(mapColliders);
+            return !(hit.length > 0 && hit[0].distance < 0.8);
         }
 
-        const clock = new THREE.Clock(); let lastSendTime = 0, walkTime = 0;
+        // --- UI ACTIONS ---
+        function start() {
+            isGameRunning = true; document.getElementById('menu').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            controls.lock(); if(conn && conn.open) conn.send({type:'init', nick:myNick});
+        }
 
+        document.getElementById('btn-create').addEventListener('click', () => {
+            myNick = document.getElementById('my-nick').value;
+            const code = Math.random().toString(36).substring(2,7).toUpperCase();
+            peer = new Peer(code);
+            peer.on('open', (id) => { 
+                document.getElementById('my-code-display').innerText = id;
+                document.getElementById('btn-start-game').classList.remove('hidden');
+                document.getElementById('btn-create').classList.add('hidden');
+            });
+            peer.on('connection', c => { conn = c; conn.on('data', handleData); });
+        });
+
+        document.getElementById('btn-join').addEventListener('click', () => {
+            myNick = document.getElementById('my-nick').value;
+            const code = document.getElementById('join-code').value.toUpperCase();
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(code);
+                conn.on('open', () => { conn.on('data', handleData); setTimeout(start, 500); });
+            });
+        });
+
+        document.getElementById('btn-offline').addEventListener('click', start);
+        document.getElementById('btn-start-game').addEventListener('click', start);
+        document.getElementById('btn-resume').addEventListener('click', () => { document.getElementById('menu').style.display = 'none'; controls.lock(); });
+
+        controls.addEventListener('unlock', () => {
+            if(isGameRunning && !isChatting) {
+                document.getElementById('menu').style.display = 'flex';
+                document.getElementById('login-ui').classList.add('hidden');
+                document.getElementById('pause-ui').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('chat-input').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const val = e.target.value;
+                if(val) {
+                    addMsg(myNick, val);
+                    if(conn && conn.open) conn.send({type:'chat', nick:myNick, text:val});
+                }
+                e.target.value = ""; e.target.classList.add('hidden'); isChatting = false; controls.lock();
+            }
+        });
+
+        function addMsg(n, t) {
+            const m = document.createElement('div'); m.innerHTML = `<b>${n}:</b> ${t}`;
+            document.getElementById('chat-messages').appendChild(m);
+        }
+
+        function handleData(d) {
+            if(d.type === 'init') { setupRemote(d.nick); if(peer.id.length === 5) conn.send({type:'init', nick:myNick}); }
+            if(d.type === 'chat') addMsg(d.nick, d.text);
+            if(d.type === 'move') { remotePlayerGroup.position.set(d.x, d.y, d.z); remotePlayerGroup.rotation.y = d.ry; }
+            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); }
+        }
+
+        document.getElementById('btn-play-music').addEventListener('click', () => {
+            const f = musicSelect.value; if(!f) return;
+            musicPlayer.src = './music/'+f; musicPlayer.play();
+            if(conn && conn.open) conn.send({type:'music', file:f});
+            controls.lock();
+        });
+
+        // --- PĘTLA GŁÓWNA ---
+        const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const delta = Math.min(clock.getDelta(), 0.1);
-            if (remoteMixer) remoteMixer.update(delta);
+            if(remoteMixer) remoteMixer.update(delta);
 
-            if (classicMapGroup.children.length > 0) {
-                const time = clock.getElapsedTime(); const core = classicMapGroup.children.find(c => c.geometry && c.geometry.type === "OctahedronGeometry");
-                if (core) { core.rotation.y += delta; core.position.y = 8 + Math.sin(time * 2) * 1; }
+            if(controls.isLocked) {
+                direction.z = Number(moveF) - Number(moveB);
+                direction.x = Number(moveR) - Number(moveL);
+                direction.normalize();
+
+                const speed = isSprinting ? 20 : 10;
+                velocity.z -= direction.z * speed * delta;
+                velocity.x -= direction.x * speed * delta;
+                velocity.multiplyScalar(0.9); // Hamowanie
+
+                if(velocity.z !== 0 && canMove(new THREE.Vector3(0,0,Math.sign(velocity.z)))) controls.moveForward(-velocity.z);
+                if(velocity.x !== 0 && canMove(new THREE.Vector3(Math.sign(velocity.x),0,0))) controls.moveRight(-velocity.x);
+
+                if(conn && conn.open) conn.send({type:'move', x:camera.position.x, y:camera.position.y, z:camera.position.z, ry:camera.rotation.y});
             }
-
-            if (controls.isLocked) {
-                direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
-                const speedMult = isSprinting ? 35.0 : 15.0; 
-                if(moveF||moveB||moveL||moveR) { walkTime += delta * (isSprinting ? 12 : 8); camera.position.y = 2 + Math.sin(walkTime) * 0.08; } else camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
-                velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
-                if (moveF || moveB) velocity.z -= direction.z * speedMult * delta; if (moveL || moveR) velocity.x -= direction.x * speedMult * delta;
-
-                if (velocity.x !== 0 || velocity.z !== 0) {
-                    if(!checkWallCollision(new THREE.Vector3(0, 0, Math.sign(velocity.z)))) controls.moveForward(-velocity.z * delta); else velocity.z = 0; 
-                    if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) controls.moveRight(-velocity.x * delta); else velocity.x = 0; 
-                }
-
-                if (conn && conn.open && performance.now() - lastSendTime > 50) { conn.send({ type: 'move', x: camera.position.x, y: camera.position.y, z: camera.position.z, rotY: camera.rotation.y }); lastSendTime = performance.now(); }
-            }
-            if(remotePlayerNickSprite) remotePlayerNickSprite.quaternion.copy(camera.quaternion);
             composer.render();
         }
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);});
-        setTimeout(animate, 500);
+
+        // STARTUJ ŁADOWANIE MAPY
+        loadMap('backrooms');
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
