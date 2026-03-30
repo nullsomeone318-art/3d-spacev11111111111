@@ -1,1 +1,247 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epika 3D - Moja Przestrzeń</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; cursor: crosshair; }
+        canvas { display: block; }
+        
+        /* 5. Celownik */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            background: rgba(255, 255, 255, 0.8); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 100;
+            box-shadow: 0 0 10px #00ffff; display: none;
+        }
 
+        /* 15. Nowoczesne Menu UI */
+        #menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(10, 10, 20, 0.7); backdrop-filter: blur(10px);
+            color: #00ffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center; z-index: 200; transition: opacity 0.3s;
+        }
+        
+        #play-btn {
+            padding: 15px 40px; font-size: 24px; background: transparent;
+            color: #00ffff; border: 2px solid #00ffff; border-radius: 8px;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
+            transition: all 0.2s; box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+        #play-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 25px #00ffff; }
+        .instructions { margin-top: 20px; font-size: 16px; color: #aaa; line-height: 1.6; }
+        b { color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="crosshair"></div>
+    <div id="menu">
+        <button id="play-btn">KLIKNIJ ABY WEJŚĆ</button>
+        <div class="instructions">
+            <b>WSAD</b> - Poruszanie | <b>Mysz</b> - Rozglądanie<br>
+            <b>Spacja</b> - Skok | <b>Shift</b> - Sprint<br>
+            <b>ESC</b> - Wyjście / Odblokowanie myszy
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        // Scena i Kamera
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050510, 0.03); // 10. Dynamiczna mgła
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.add(camera); // Ważne dla latarki!
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 14. Miękkie cienie
+        document.body.appendChild(renderer.domElement);
+
+        // 18. Półkuliste oświetlenie
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4444ff, 0.3);
+        scene.add(hemiLight);
+
+        // 6. Latarka podpięta do kamery
+        const flashlight = new THREE.SpotLight(0xffffff, 2, 50, Math.PI / 6, 0.5, 1);
+        flashlight.position.set(0, 0, 0);
+        flashlight.target.position.set(0, 0, -1);
+        camera.add(flashlight);
+        camera.add(flashlight.target);
+
+        // 11. Lustrzana podłoga i siatka
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x020205, roughness: 0.1, metalness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+        const grid = new THREE.GridHelper(200, 100, 0x00ffff, 0x111133);
+        grid.position.y = 0.01;
+        scene.add(grid);
+
+        // 8. Neonowy piedestał na środek
+        const pedestal = new THREE.Mesh(
+            new THREE.CylinderGeometry(2, 2.5, 0.5, 32),
+            new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x004444 })
+        );
+        pedestal.position.set(0, 0.25, -5);
+        pedestal.receiveShadow = true;
+        scene.add(pedestal);
+
+        // 9. Rotująca aureola nad avatarem
+        const halo = new THREE.Mesh(
+            new THREE.TorusGeometry(2.5, 0.05, 16, 100),
+            new THREE.MeshBasicMaterial({ color: 0x00ffff })
+        );
+        halo.position.set(0, 4, -5);
+        halo.rotation.x = Math.PI / 2;
+        scene.add(halo);
+
+        // 13. Mroczne monolity
+        const monolithGeo = new THREE.BoxGeometry(2, 20, 2);
+        const monolithMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
+        for(let i=0; i<30; i++) {
+            const pillar = new THREE.Mesh(monolithGeo, monolithMat);
+            pillar.position.set((Math.random() - 0.5) * 150, Math.random() * 5 + 5, (Math.random() - 0.5) * 150);
+            pillar.castShadow = true;
+            pillar.receiveShadow = true;
+            if(pillar.position.distanceTo(new THREE.Vector3(0,0,0)) > 20) scene.add(pillar);
+        }
+
+        // 7. System gwiezdnego pyłu
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlesCount = 2000;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i = 0; i < particlesCount * 3; i++) posArray[i] = (Math.random() - 0.5) * 100;
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0x00ffff, transparent: true, opacity: 0.8 });
+        const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particlesMesh);
+
+        // Ładowanie Modelu (Avatar)
+        let avatar;
+        const loader = new GLTFLoader();
+        loader.load('./models/avatar/scene.gltf', (gltf) => {
+            avatar = gltf.scene;
+            avatar.position.set(0, 0.5, -5); // Stoi na piedestale
+            avatar.scale.set(1, 1, 1);       // Zmień skalę jeśli jest za duży/mały
+            avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+            scene.add(avatar);
+        }, undefined, (error) => console.error('Błąd:', error));
+
+        // 1. BLOKADA MYSZY (Pointer Lock)
+        const controls = new PointerLockControls(camera, document.body);
+        const menu = document.getElementById('menu');
+        const playBtn = document.getElementById('play-btn');
+        const crosshair = document.getElementById('crosshair');
+
+        playBtn.addEventListener('click', () => controls.lock());
+        controls.addEventListener('lock', () => { menu.style.display = 'none'; crosshair.style.display = 'block'; });
+        controls.addEventListener('unlock', () => { menu.style.display = 'flex'; crosshair.style.display = 'none'; });
+
+        // Zmienne do ruchu
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let canJump = false, isSprinting = false; // 3. Skakanie, 4. Bieganie
+
+        // Klawiszologia
+        const onKeyDown = (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'Space': if (canJump) velocity.y += 15; canJump = false; break;
+                case 'ShiftLeft': isSprinting = true; break;
+            }
+        };
+        const onKeyUp = (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'ShiftLeft': isSprinting = false; break;
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        camera.position.set(0, 2, 5); // Pozycja startowa gracza
+
+        // 16. Zegary i Delta Time
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 19. "Oddychanie" środowiska
+            scene.fog.color.setHSL((Math.sin(time * 0.1) * 0.1) + 0.6, 0.8, 0.1);
+            halo.rotation.z += 1 * delta; // Obrót aureoli
+            particlesMesh.rotation.y = time * 0.05; // Obrót pyłu
+
+            // 12. Lewitacja awatara
+            if (avatar) avatar.position.y = 0.5 + Math.sin(time * 2) * 0.1;
+
+            if (controls.isLocked) {
+                // 2. Fizyka ruchu WSAD
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize(); // Żeby na skos nie biegać szybciej
+
+                const speed = isSprinting ? 60 : 30; // Prędkość biegu/chodu
+                
+                // Hamowanie
+                velocity.x -= velocity.x * 5.0 * delta;
+                velocity.z -= velocity.z * 5.0 * delta;
+                // Grawitacja
+                velocity.y -= 40.0 * delta; // 9.81 m/s2 w skali gry
+
+                if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                controls.getObject().position.y += velocity.y * delta;
+
+                // 17. Kolizja z podłożem (blokada spadania)
+                if (controls.getObject().position.y < 2) {
+                    velocity.y = 0;
+                    controls.getObject().position.y = 2; // Wysokość wzroku gracza
+                    canJump = true;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+        
+        // 20. Responsywność
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
