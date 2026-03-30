@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Multi & Budowanie</title>
+    <title>Epika 3D - Multi, Budowanie & Muzyka</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
@@ -22,7 +22,7 @@
         }
 
         .panel {
-            background: rgba(0,0,0,0.6); padding: 30px; border: 1px solid #00ffff;
+            background: rgba(0,0,0,0.6); padding: 20px; border: 1px solid #00ffff;
             border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2);
             width: 300px;
         }
@@ -30,38 +30,50 @@
         .panels-container { display: flex; flex-wrap: wrap; justify-content: center; }
 
         input {
-            padding: 10px; font-size: 16px; margin: 10px 0; background: #111;
-            border: 1px solid #00ffff; color: white; text-align: center; width: 80%; border-radius: 5px;
+            padding: 10px; font-size: 14px; margin: 10px 0; background: #111;
+            border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px;
         }
 
         button {
-            padding: 12px 25px; font-size: 16px; background: transparent; color: #00ffff;
+            padding: 10px 20px; font-size: 14px; background: transparent; color: #00ffff;
             border: 2px solid #00ffff; border-radius: 5px; cursor: pointer;
-            text-transform: uppercase; transition: 0.2s; margin-top: 10px; width: 100%; font-weight: bold;
+            text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold;
         }
         button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
 
-        #my-code-display { font-size: 20px; color: #ff00ff; font-weight: bold; margin: 15px 0; user-select: text; background: #222; padding: 10px; border-radius: 5px;}
+        #my-code-display { font-size: 20px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 10px; border-radius: 5px;}
         .hidden { display: none !important; }
         
         #hud {
             position: absolute; bottom: 20px; left: 20px; color: white;
             background: rgba(0,0,0,0.5); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none;
         }
+
+        /* Styl dla odtwarzacza na dole */
+        #music-status {
+            position: absolute; top: 20px; right: 20px; color: #ff00ff; font-weight: bold;
+            background: rgba(0,0,0,0.5); padding: 10px; border-right: 3px solid #ff00ff; z-index: 100; display: none;
+        }
+        
+        /* Ukrywamy ramkę wideo YT, chcemy tylko muzykę */
+        #yt-player { position: absolute; top: -9999px; left: -9999px; } 
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
+    <div id="yt-player"></div>
+
     <div id="crosshair"></div>
     <div id="hud">
         <b>LPM</b>: Zbuduj Blok<br>
         <b>WSAD</b>: Ruch | <b>Spacja</b>: Skok<br>
-        <b>ESC</b>: Zostaw grę / Kursor
+        <b>ESC</b>: Menu / Zmień Muzykę
     </div>
+    <div id="music-status">Muzyka: Brak</div>
 
     <div id="menu">
         <h1 style="margin-bottom: 5px; font-size: 3em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
-        <p style="color: #aaa; margin-bottom: 30px;">Zbudujcie to razem</p>
+        <p style="color: #aaa; margin-bottom: 20px;">Zbudujcie to i słuchajcie razem</p>
         
         <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Gracz">
 
@@ -70,7 +82,7 @@
                 <h3>STWÓRZ MAPĘ</h3>
                 <button id="btn-create">Generuj Kod Serwera</button>
                 <div id="code-container" class="hidden">
-                    <p style="font-size: 14px; color: #aaa;">Podaj ten kod znajomemu:</p>
+                    <p style="font-size: 12px; color: #aaa;">Podaj ten kod znajomemu:</p>
                     <div id="my-code-display"></div>
                     <button id="btn-start-host">Rozpocznij Grę</button>
                 </div>
@@ -81,8 +93,15 @@
                 <input type="text" id="join-code-input" placeholder="Wklej kod serwera"><br>
                 <button id="btn-join">Dołącz i Graj</button>
             </div>
+
+            <div class="panel" id="music-panel" style="border-color: #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.2);">
+                <h3 style="color: #ff00ff;">ODTWARZACZ YT (DJ)</h3>
+                <p style="font-size: 12px; color: #aaa;">Wklej link do piosenki z YouTube</p>
+                <input type="text" id="yt-url-input" placeholder="np. https://youtu.be/dQw4w9WgXcQ"><br>
+                <button id="btn-play-music" style="border-color: #ff00ff; color: #ff00ff;">Graj dla wszystkich!</button>
+            </div>
         </div>
-        <p id="status-msg" style="margin-top: 20px; color: #ff00ff; font-weight: bold;"></p>
+        <p id="status-msg" style="margin-top: 15px; color: #00ffff; font-weight: bold;"></p>
     </div>
 
     <script type="importmap">
@@ -99,23 +118,49 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
+        // --- 0. YOUTUBE API SETUP ---
+        let ytPlayer;
+        let isYtReady = false;
+
+        // Ładowanie API YouTube IFrame
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '10', width: '10', // Praktycznie niewidoczne
+                videoId: '',
+                playerVars: { 'autoplay': 1, 'controls': 0 },
+                events: { 'onReady': () => { isYtReady = true; } }
+            });
+        };
+
+        // Funkcja wyciągająca ID filmu z linku (obsługuje różne formaty YT)
+        function getYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
         // --- 1. ZMIENNE GLOBALNE I SIECIOWE ---
         let peer = null;
         let conn = null;
         let myNick = "Gracz";
         let isHost = false;
         
-        // Zmienne do drugiego gracza
         let remotePlayerGroup = new THREE.Group();
         let remotePlayerNickSprite = null;
         let remoteAvatarLoaded = false;
         
         const uiMenu = document.getElementById('menu');
         const uiHud = document.getElementById('hud');
+        const uiMusicStatus = document.getElementById('music-status');
         const uiCrosshair = document.getElementById('crosshair');
         const statusMsg = document.getElementById('status-msg');
 
-        // --- 2. KONFIGURACJA SCENY 3D ---
+        // --- 2. SCENA 3D ---
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x050510, 0.03);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -133,10 +178,9 @@
         scene.add(dirLight);
 
         // --- 3. ŚRODOWISKO I KOLIZJE ---
-        const collidableObjects = []; // Tablica skrzynek kolizyjnych (Box3)
-        const buildableSurfaces = []; // Obiekty dla raycastera (budowanie)
+        const collidableObjects = [];
+        const buildableSurfaces = [];
 
-        // Podłoga
         const floorMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(200, 200),
             new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.8 })
@@ -150,7 +194,6 @@
         grid.position.y = 0.01;
         scene.add(grid);
 
-        // Funkcja do dodawania obiektów z kolizją
         function addSolidObject(mesh) {
             scene.add(mesh);
             buildableSurfaces.push(mesh);
@@ -159,20 +202,18 @@
             collidableObjects.push(box);
         }
 
-        // Monolity na mapie
         const monMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
         const monGeo = new THREE.BoxGeometry(2, 10, 2);
         for(let i=0; i<15; i++) {
             const pillar = new THREE.Mesh(monGeo, monMat);
             pillar.position.set((Math.random() - 0.5) * 60, 5, (Math.random() - 0.5) * 60);
-            if(pillar.position.length() > 10) { // Nie na środku
-                pillar.castShadow = true;
-                pillar.receiveShadow = true;
+            if(pillar.position.length() > 10) { 
+                pillar.castShadow = true; pillar.receiveShadow = true;
                 addSolidObject(pillar);
             }
         }
 
-        // --- 4. SYSTEM MULTIPLAYER (PEERJS) ---
+        // --- 4. SYSTEM MULTIPLAYER ---
         function createTextSprite(message) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -192,55 +233,59 @@
 
         function setupRemotePlayer(nick) {
             remotePlayerNickSprite = createTextSprite(nick);
-            remotePlayerNickSprite.position.y = 2.5; // Nad głową
+            remotePlayerNickSprite.position.y = 2.5;
             remotePlayerGroup.add(remotePlayerNickSprite);
             scene.add(remotePlayerGroup);
 
-            // Ładowanie Avatara z Twojego folderu
             const loader = new GLTFLoader();
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const avatar = gltf.scene;
-                avatar.scale.set(1, 1, 1); // Dostosuj jeśli za duży/mały
-                avatar.position.y = -1; // Środek modelu a podłoga
+                avatar.scale.set(1, 1, 1);
+                avatar.position.y = -1;
                 avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
                 remotePlayerGroup.add(avatar);
                 remoteAvatarLoaded = true;
             });
         }
 
+        // Odbieranie danych z sieci
         function handleNetworkData(data) {
             if(data.type === 'init') {
                 setupRemotePlayer(data.nick);
-                // Host wysyła swoje bloki nowemu graczowi
                 if(!isHost && data.blocks) {
                     data.blocks.forEach(b => placeBlock(new THREE.Vector3(b.x, b.y, b.z), false));
                 }
             }
             if(data.type === 'move' && remoteAvatarLoaded) {
-                // Płynna interpolacja pozycji drugiego gracza
                 remotePlayerGroup.position.set(data.x, data.y, data.z);
                 remotePlayerGroup.rotation.y = data.rotY;
             }
             if(data.type === 'build') {
                 placeBlock(new THREE.Vector3(data.x, data.y, data.z), false);
             }
+            // NOWOŚĆ: Synchronizacja Muzyki
+            if(data.type === 'music') {
+                if(isYtReady && ytPlayer.loadVideoById) {
+                    ytPlayer.loadVideoById(data.videoId);
+                    uiMusicStatus.innerText = "Muzyka: Odtwarzanie...";
+                }
+            }
         }
 
         function startGame() {
             uiMenu.style.display = 'none';
             uiHud.style.display = 'block';
+            uiMusicStatus.style.display = 'block';
             uiCrosshair.style.display = 'block';
             controls.lock();
-            // Wyślij swój nick od razu po starcie
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick, blocks: builtBlocksNetwork });
         }
 
-        // --- Logika UI ---
+        // --- Logika UI (Przyciski) ---
         document.getElementById('btn-create').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Host";
-            peer = new Peer(); // Generuje losowe ID
+            peer = new Peer();
             statusMsg.innerText = "Trwa generowanie serwera...";
-            
             peer.on('open', (id) => {
                 document.getElementById('btn-create').classList.add('hidden');
                 document.getElementById('code-container').classList.remove('hidden');
@@ -248,7 +293,6 @@
                 statusMsg.innerText = "Oczekiwanie na gracza...";
                 isHost = true;
             });
-
             peer.on('connection', (connection) => {
                 conn = connection;
                 statusMsg.innerText = "Gracz połączony! Możesz zacząć grę.";
@@ -259,35 +303,55 @@
         document.getElementById('btn-join').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Klient";
             const code = document.getElementById('join-code-input').value.trim();
-            if(!code) return alert("Podaj kod!");
-            
+            if(!code) return;
             peer = new Peer();
             statusMsg.innerText = "Łączenie z serwerem...";
-            
             peer.on('open', () => {
                 conn = peer.connect(code);
                 conn.on('open', () => {
                     statusMsg.innerText = "Połączono! Zaczynamy...";
                     conn.on('data', handleNetworkData);
-                    setTimeout(startGame, 1000); // Automatyczny start dla klienta
+                    setTimeout(startGame, 1000);
                 });
-                conn.on('error', (err) => { statusMsg.innerText = "Błąd połączenia!"; });
             });
         });
 
         document.getElementById('btn-start-host').addEventListener('click', startGame);
 
+        // NOWOŚĆ: Logika DJ-a
+        document.getElementById('btn-play-music').addEventListener('click', () => {
+            const url = document.getElementById('yt-url-input').value;
+            const videoId = getYouTubeID(url);
+            
+            if(videoId) {
+                // Odpal u siebie
+                if(isYtReady && ytPlayer.loadVideoById) {
+                    ytPlayer.loadVideoById(videoId);
+                    uiMusicStatus.innerText = "Muzyka: Twój wybór!";
+                }
+                // Wyślij do drugiego gracza
+                if(conn && conn.open) {
+                    conn.send({ type: 'music', videoId: videoId });
+                }
+                
+                // Wróć do gry (zablokuj kursor)
+                if(scene.children.length > 0) controls.lock(); 
+            } else {
+                alert("Nieprawidłowy link YouTube! Wklej poprawny adres URL.");
+            }
+        });
+
         // --- 5. BUDOWANIE (RAYCASTER) ---
         const raycaster = new THREE.Raycaster();
         const blockGeo = new THREE.BoxGeometry(2, 2, 2);
         const blockMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
-        const builtBlocksNetwork = []; // Do wysyłania mapy nowym graczom
+        const builtBlocksNetwork = [];
 
         function placeBlock(position, sendToNetwork = true) {
             const block = new THREE.Mesh(blockGeo, blockMat);
             block.position.copy(position);
             block.castShadow = true; block.receiveShadow = true;
-            addSolidObject(block); // Dodaje kolizję
+            addSolidObject(block);
 
             if(sendToNetwork) {
                 builtBlocksNetwork.push({x: position.x, y: position.y, z: position.z});
@@ -303,55 +367,44 @@
             if (intersects.length > 0) {
                 const intersect = intersects[0];
                 const pos = intersect.point.clone().add(intersect.face.normal.clone().multiplyScalar(1));
-                // Przyciąganie do siatki 2x2x2
-                pos.x = Math.floor(pos.x / 2) * 2 + 1;
-                pos.y = Math.floor(pos.y / 2) * 2 + 1;
-                pos.z = Math.floor(pos.z / 2) * 2 + 1;
+                pos.x = Math.floor(pos.x / 2) * 2 + 1; pos.y = Math.floor(pos.y / 2) * 2 + 1; pos.z = Math.floor(pos.z / 2) * 2 + 1;
                 placeBlock(pos, true);
             }
         });
 
-        // --- 6. STEROWANIE, FIZYKA I KOLIZJE ---
+        // --- 6. STEROWANIE ---
         const controls = new PointerLockControls(camera, document.body);
         controls.addEventListener('unlock', () => {
             uiMenu.style.display = 'flex'; uiHud.style.display = 'none'; uiCrosshair.style.display = 'none';
         });
 
         camera.position.set(0, 2, 5);
-        const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
+        const velocity = new THREE.Vector3(); const direction = new THREE.Vector3();
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
 
         document.addEventListener('keydown', (e) => {
             switch(e.code) {
-                case 'KeyW': moveF = true; break;
-                case 'KeyS': moveB = true; break;
-                case 'KeyA': moveL = true; break;
-                case 'KeyD': moveR = true; break;
+                case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break;
+                case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break;
                 case 'Space': if(canJump){ velocity.y += 12; canJump = false; } break;
             }
         });
         document.addEventListener('keyup', (e) => {
             switch(e.code) {
-                case 'KeyW': moveF = false; break;
-                case 'KeyS': moveB = false; break;
-                case 'KeyA': moveL = false; break;
-                case 'KeyD': moveR = false; break;
+                case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break;
+                case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break;
             }
         });
 
-        const clock = new THREE.Clock();
-        const playerBox = new THREE.Box3();
+        const clock = new THREE.Clock(); const playerBox = new THREE.Box3();
 
-        // Sprawdzanie kolizji
-        function checkCollision(predictedPosition) {
-            // Box gracza: szerokość 1, wysokość 2, głębokość 1
+        function checkCollision(predictedPos) {
             playerBox.setFromCenterAndSize(
-                new THREE.Vector3(predictedPosition.x, predictedPosition.y - 1, predictedPosition.z),
+                new THREE.Vector3(predictedPos.x, predictedPos.y - 1, predictedPos.z),
                 new THREE.Vector3(1, 2, 1)
             );
             for(let box of collidableObjects) {
-                if(playerBox.intersectsBox(box)) return true; // Jest kolizja
+                if(playerBox.intersectsBox(box)) return true;
             }
             return false;
         }
@@ -363,63 +416,35 @@
             const delta = clock.getDelta();
 
             if (controls.isLocked) {
-                // Obliczanie prędkości
-                direction.z = Number(moveF) - Number(moveB);
-                direction.x = Number(moveR) - Number(moveL);
+                direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL);
                 direction.normalize();
 
-                velocity.x -= velocity.x * 10.0 * delta; // Hamowanie
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 30.0 * delta; // Grawitacja
-
+                velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta; velocity.y -= 30.0 * delta; 
                 if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
                 if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
                 const currPos = controls.getObject().position.clone();
 
-                // Test kolizji dla osi X
-                const nextPosX = currPos.clone();
-                nextPosX.x += (velocity.x * delta) * -1; // -1 bo PointerLock dziala specyficznie
-                if(!checkCollision(nextPosX)) {
-                    controls.moveRight(-velocity.x * delta);
-                } else { velocity.x = 0; }
+                const nextPosX = currPos.clone(); nextPosX.x += (velocity.x * delta) * -1;
+                if(!checkCollision(nextPosX)) controls.moveRight(-velocity.x * delta); else velocity.x = 0;
 
-                // Test kolizji dla osi Z
-                const nextPosZ = controls.getObject().position.clone();
-                nextPosZ.z += (velocity.z * delta) * -1;
-                if(!checkCollision(nextPosZ)) {
-                    controls.moveForward(-velocity.z * delta);
-                } else { velocity.z = 0; }
+                const nextPosZ = controls.getObject().position.clone(); nextPosZ.z += (velocity.z * delta) * -1;
+                if(!checkCollision(nextPosZ)) controls.moveForward(-velocity.z * delta); else velocity.z = 0;
 
-                // Aktualizacja osi Y (Grawitacja / Skok)
                 controls.getObject().position.y += velocity.y * delta;
-                
-                // Kolizja z podłogą
-                if (controls.getObject().position.y < 2) {
-                    velocity.y = 0;
-                    controls.getObject().position.y = 2; // Wysokość wzroku
-                    canJump = true;
-                }
+                if (controls.getObject().position.y < 2) { velocity.y = 0; controls.getObject().position.y = 2; canJump = true; }
 
-                // Wysyłanie pozycji do drugiego gracza (co ok. 100ms żeby nie zapchać łącza)
                 if (conn && conn.open && performance.now() - lastSendTime > 50) {
                     const pos = controls.getObject().position;
-                    // Obrót wokół osi Y zależy od kamery (yaw)
-                    const rotY = camera.rotation.y; 
-                    conn.send({ type: 'move', x: pos.x, y: pos.y, z: pos.z, rotY: rotY });
+                    conn.send({ type: 'move', x: pos.x, y: pos.y, z: pos.z, rotY: camera.rotation.y });
                     lastSendTime = performance.now();
                 }
             }
             
-            // Żeby nick nad głową drugiego gracza zawsze patrzył w naszą stronę
-            if(remotePlayerNickSprite) {
-                remotePlayerNickSprite.quaternion.copy(camera.quaternion);
-            }
-
+            if(remotePlayerNickSprite) remotePlayerNickSprite.quaternion.copy(camera.quaternion);
             renderer.render(scene, camera);
         }
 
-        // Responsywność
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
