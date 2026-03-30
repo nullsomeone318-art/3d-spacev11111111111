@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Żyjący Świat & Multi</title>
+    <title>Epika 3D - Żyjący Świat & Multi (Zoptymalizowane)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
@@ -24,7 +24,7 @@
         .panel {
             background: rgba(0,0,0,0.6); padding: 20px; border: 1px solid #00ffff;
             border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2);
-            width: 300px;
+            width: 320px;
         }
 
         .panels-container { display: flex; flex-wrap: wrap; justify-content: center; }
@@ -32,13 +32,17 @@
         input { padding: 10px; font-size: 14px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px; }
         #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
 
-        button { padding: 10px 20px; font-size: 14px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
+        button { padding: 12px 20px; font-size: 16px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 5px; width: 100%; font-weight: bold; }
         button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
+        
+        /* Styl dla przycisku wznowienia gry */
+        #btn-resume { background: #00ffff; color: #000; font-size: 20px; padding: 15px; }
+        #btn-resume:hover { background: #fff; box-shadow: 0 0 25px #fff; border-color: #fff;}
 
         #my-code-display { font-size: 32px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
         .hidden { display: none !important; }
         
-        #hud { position: absolute; bottom: 20px; left: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; }
+        #hud { position: absolute; bottom: 20px; left: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none; line-height: 1.5;}
         #music-status { position: absolute; top: 20px; right: 20px; color: #ff00ff; font-weight: bold; background: rgba(0,0,0,0.5); padding: 10px; border-right: 3px solid #ff00ff; z-index: 100; display: none; }
         #yt-player { position: absolute; top: -9999px; left: -9999px; } 
     </style>
@@ -50,38 +54,48 @@
     <div id="hud">
         <b>LPM</b>: Zbuduj | <b>PPM</b>: Zniszcz<br>
         <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint | <b>Spacja</b>: Skok<br>
-        <b>ESC</b>: Menu / Zmień Muzykę
+        <b>ESC</b>: Pauza / Menu
     </div>
     <div id="music-status">Muzyka: Brak</div>
 
     <div id="menu">
-        <h1 style="margin-bottom: 5px; font-size: 3em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D: ŻYJĄCY ŚWIAT</h1>
+        <h1 style="margin-bottom: 5px; font-size: 3em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
         
-        <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Wędrowiec">
+        <div id="login-panels" style="display: flex; flex-direction: column; align-items: center;">
+            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Wędrowiec">
+            <div class="panels-container">
+                <div class="panel" id="host-panel">
+                    <h3>STWÓRZ ŚWIAT</h3>
+                    <button id="btn-create">Generuj Kod</button>
+                    <div id="code-container" class="hidden">
+                        <p style="font-size: 12px; color: #aaa;">Kod dla znajomych:</p>
+                        <div id="my-code-display"></div>
+                        <button id="btn-start-host">Wejdź do Świata</button>
+                    </div>
+                </div>
 
-        <div class="panels-container">
-            <div class="panel" id="host-panel">
-                <h3>STWÓRZ ŚWIAT</h3>
-                <button id="btn-create">Generuj Kod</button>
-                <div id="code-container" class="hidden">
-                    <p style="font-size: 12px; color: #aaa;">Kod dla znajomych:</p>
-                    <div id="my-code-display"></div>
-                    <button id="btn-start-host">Wejdź do Świata</button>
+                <div class="panel" id="join-panel">
+                    <h3>DOŁĄCZ DO GRY</h3>
+                    <input type="text" id="join-code-input" placeholder="Wpisz kod (5 znaków)" maxlength="5"><br>
+                    <button id="btn-join">Dołącz i Graj</button>
                 </div>
             </div>
+        </div>
 
-            <div class="panel" id="join-panel">
-                <h3>DOŁĄCZ DO GRY</h3>
-                <input type="text" id="join-code-input" placeholder="Wpisz kod (5 znaków)" maxlength="5"><br>
-                <button id="btn-join">Dołącz</button>
-            </div>
-
-            <div class="panel" id="music-panel" style="border-color: #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.2);">
-                <h3 style="color: #ff00ff;">ODTWARZACZ YT (DJ)</h3>
-                <input type="text" id="yt-url-input" placeholder="Wklej link YouTube"><br>
-                <button id="btn-play-music" style="border-color: #ff00ff; color: #ff00ff;">Graj dla wszystkich!</button>
+        <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
+            <h2 style="color: #fff;">GRA ZAPAUZOWANA</h2>
+            <div class="panels-container">
+                <div class="panel">
+                    <button id="btn-resume">WZNÓW GRĘ</button>
+                </div>
+                <div class="panel" style="border-color: #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.2);">
+                    <h3 style="color: #ff00ff;">ODTWARZACZ YT (DJ)</h3>
+                    <input type="text" id="yt-url-input" placeholder="Wklej link YouTube"><br>
+                    <button id="btn-play-music" style="border-color: #ff00ff; color: #ff00ff;">Graj dla wszystkich!</button>
+                </div>
             </div>
         </div>
+        
         <p id="status-msg" style="margin-top: 15px; color: #00ffff; font-weight: bold;"></p>
     </div>
 
@@ -108,29 +122,22 @@
         };
         function getYouTubeID(url) { const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
 
-        // --- PRNG (Generator Losowy ze stałym Seedem - świat będzie taki sam dla obu graczy) ---
-        function mulberry32(a) {
-            return function() {
-              var t = a += 0x6D2B79F5;
-              t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-              return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
-        }
-        const seededRandom = mulberry32(9999); // Stałe ziarno świata
-
-        // --- ZMIENNE GLOBALNE ---
+        // --- ZMIENNE GLOBALNE I SIECIOWE ---
         let peer = null, conn = null, myNick = "Wędrowiec", isHost = false;
-        let remotePlayerGroup = new THREE.Group(), remotePlayerNickSprite = null, remoteAvatarLoaded = false, remoteMixer = null;
+        let isGameRunning = false; // Zapobiega pokazywaniu menu startowego
         
+        let remotePlayerGroup = new THREE.Group(), remotePlayerNickSprite = null, remoteAvatarLoaded = false, remoteMixer = null;
+        let remotePlayerExists = false; // Czy drugi gracz został już zainicjowany
+
         const uiMenu = document.getElementById('menu'), uiHud = document.getElementById('hud'), uiMusicStatus = document.getElementById('music-status');
         const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
 
         function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
 
-        // --- SCENA 3D (Większy Świat) ---
+        // --- SCENA 3D ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Dzienne niebo startowe
-        scene.fog = new THREE.FogExp2(0x87CEEB, 0.015); // Mgła
+        scene.background = new THREE.Color(0x87CEEB); 
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.015); 
         
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -139,177 +146,104 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // Światło (Dzień i Noc)
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
-        scene.add(hemiLight);
-        
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6); scene.add(hemiLight);
         const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        sunLight.castShadow = true;
-        sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 500;
-        sunLight.shadow.camera.left = -100; sunLight.shadow.camera.right = 100;
-        sunLight.shadow.camera.top = 100; sunLight.shadow.camera.bottom = -100;
+        sunLight.castShadow = true; sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 500;
+        sunLight.shadow.camera.left = -100; sunLight.shadow.camera.right = 100; sunLight.shadow.camera.top = 100; sunLight.shadow.camera.bottom = -100;
         scene.add(sunLight);
 
-        // Gwiazdy
-        const starsGeo = new THREE.BufferGeometry();
-        const starsPos = new Float32Array(3000 * 3);
-        for(let i=0; i<3000*3; i++) starsPos[i] = (Math.random() - 0.5) * 2000;
-        starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        const starsMat = new THREE.PointsMaterial({color: 0xffffff, size: 1.5, transparent: true, opacity: 0});
-        const stars = new THREE.Points(starsGeo, starsMat);
-        scene.add(stars);
+        // --- GENERATOR ŚWIATA (Stałe ziarno dla Multi) ---
+        function mulberry32(a) { return function() { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+        const seededRandom = mulberry32(9999);
 
-        // --- GENERATOR ŚWIATA (Nature & Props) ---
-        const collidableObjects = [];
-        const buildableSurfaces = [];
-        const mapSize = 1000;
+        const collidableObjects = []; const buildableSurfaces = []; const mapSize = 1000;
 
-        // Podłoga (Ziemia/Trawa)
         const floorGeo = new THREE.PlaneGeometry(mapSize, mapSize, 50, 50);
-        // Kolorowanie wierzchołków dla zróżnicowanej trawy i ścieżek
         const colors = [];
         for(let i=0; i<floorGeo.attributes.position.count; i++) {
-            const x = floorGeo.attributes.position.getX(i);
-            const y = floorGeo.attributes.position.getY(i);
-            
-            // Ścieżki za pomocą funkcji sinus
+            const x = floorGeo.attributes.position.getX(i), y = floorGeo.attributes.position.getY(i);
             const pathValue = Math.sin(x * 0.02) * Math.cos(y * 0.02);
-            if(Math.abs(pathValue) < 0.15) {
-                colors.push(0.5, 0.4, 0.2); // Ziemia (Ścieżka)
-            } else {
-                const greenVary = 0.3 + seededRandom() * 0.2;
-                colors.push(0.1, greenVary, 0.1); // Trawa
-            }
+            if(Math.abs(pathValue) < 0.15) { colors.push(0.5, 0.4, 0.2); } else { colors.push(0.1, 0.3 + seededRandom() * 0.2, 0.1); }
         }
         floorGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        const floorMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
-        const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-        floorMesh.rotation.x = -Math.PI / 2;
-        floorMesh.receiveShadow = true;
-        scene.add(floorMesh);
-        buildableSurfaces.push(floorMesh);
+        const floorMesh = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+        floorMesh.rotation.x = -Math.PI / 2; floorMesh.receiveShadow = true; scene.add(floorMesh); buildableSurfaces.push(floorMesh);
 
         function addSolid(mesh) { scene.add(mesh); buildableSurfaces.push(mesh); mesh.updateMatrixWorld(); collidableObjects.push(new THREE.Box3().setFromObject(mesh)); }
 
-        // Geometrie
-        const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
-        const leavesGeo = new THREE.ConeGeometry(3, 8, 8);
-        const rockGeo = new THREE.DodecahedronGeometry(2, 1);
-        const trunkMat = new THREE.MeshStandardMaterial({color: 0x4B3621});
-        const leavesMat = new THREE.MeshStandardMaterial({color: 0x228b22});
-        const rockMat = new THREE.MeshStandardMaterial({color: 0x777788});
+        // Las i Skały
+        const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, 4, 8); const leavesGeo = new THREE.ConeGeometry(3, 8, 8); const rockGeo = new THREE.DodecahedronGeometry(2, 1);
+        const trunkMat = new THREE.MeshStandardMaterial({color: 0x4B3621}); const leavesMat = new THREE.MeshStandardMaterial({color: 0x228b22}); const rockMat = new THREE.MeshStandardMaterial({color: 0x777788});
+        const interactableBlocks = [];
 
-        const interactableBlocks = []; // Do niszczenia
-
-        // Generowanie Lasu i Skał
         for(let i=0; i<400; i++) {
-            const px = (seededRandom() - 0.5) * (mapSize - 50);
-            const pz = (seededRandom() - 0.5) * (mapSize - 50);
-            if(Math.abs(px) < 15 && Math.abs(pz) < 15) continue; // Pusty środek na spawn
-            
+            const px = (seededRandom() - 0.5) * (mapSize - 50), pz = (seededRandom() - 0.5) * (mapSize - 50);
+            if(Math.abs(px) < 15 && Math.abs(pz) < 15) continue;
             if(seededRandom() > 0.2) {
-                // Drzewo
                 const tree = new THREE.Group();
-                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-                trunk.position.y = 2; trunk.castShadow = true; trunk.receiveShadow = true;
-                const leaves = new THREE.Mesh(leavesGeo, leavesMat);
-                leaves.position.y = 7; leaves.castShadow = true; leaves.receiveShadow = true;
-                tree.add(trunk); tree.add(leaves);
-                tree.position.set(px, 0, pz);
-                
-                // Box kolizyjny tylko na pień
-                trunk.updateMatrixWorld();
-                const box = new THREE.Box3().setFromObject(trunk);
-                box.applyMatrix4(new THREE.Matrix4().makeTranslation(px, 0, pz)); // Korekta grupy
-                collidableObjects.push(box);
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat); trunk.position.y = 2; trunk.castShadow = true; trunk.receiveShadow = true;
+                const leaves = new THREE.Mesh(leavesGeo, leavesMat); leaves.position.y = 7; leaves.castShadow = true; leaves.receiveShadow = true;
+                tree.add(trunk); tree.add(leaves); tree.position.set(px, 0, pz);
+                trunk.updateMatrixWorld(); const box = new THREE.Box3().setFromObject(trunk); box.applyMatrix4(new THREE.Matrix4().makeTranslation(px, 0, pz)); collidableObjects.push(box);
                 scene.add(tree);
             } else {
-                // Skała
-                const rock = new THREE.Mesh(rockGeo, rockMat);
-                rock.position.set(px, 1, pz);
-                rock.scale.set(1 + seededRandom(), 1 + seededRandom(), 1 + seededRandom());
-                rock.rotation.set(seededRandom()*Math.PI, seededRandom()*Math.PI, 0);
-                rock.castShadow = true; rock.receiveShadow = true;
-                addSolid(rock);
+                const rock = new THREE.Mesh(rockGeo, rockMat); rock.position.set(px, 1, pz); rock.scale.set(1+seededRandom(), 1+seededRandom(), 1+seededRandom()); rock.rotation.set(seededRandom()*Math.PI, seededRandom()*Math.PI, 0); rock.castShadow = true; rock.receiveShadow = true; addSolid(rock);
             }
         }
-
-        // Ruiny na środku
-        const monGeo = new THREE.BoxGeometry(2, 12, 2);
-        const monMat = new THREE.MeshStandardMaterial({ color: 0x111115 });
-        for(let i=0; i<8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
-            const r = new THREE.Mesh(monGeo, monMat);
-            r.position.set(Math.cos(angle)*10, 6, Math.sin(angle)*10);
-            r.castShadow = true; r.receiveShadow = true; addSolid(r);
-        }
-
-        // Magiczne Kryształy (Światła)
-        const crystals = [];
-        const crysGeo = new THREE.OctahedronGeometry(1, 0);
-        const crysMat = new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x00aaaa, transparent: true, opacity: 0.9});
-        for(let i=0; i<20; i++) {
-            const c = new THREE.Mesh(crysGeo, crysMat);
-            c.position.set((seededRandom()-0.5)*500, 2, (seededRandom()-0.5)*500);
-            scene.add(c);
-            crystals.push(c);
-            const pLight = new THREE.PointLight(0x00ffff, 1, 30);
-            pLight.position.copy(c.position);
-            scene.add(pLight);
-            crystals.push({mesh: c, light: pLight, offset: seededRandom() * 10});
-        }
-
-        // Chmury
-        const clouds = [];
-        const cloudGeo = new THREE.SphereGeometry(10, 8, 8);
-        const cloudMat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.5});
-        for(let i=0; i<40; i++) {
-            const cl = new THREE.Mesh(cloudGeo, cloudMat);
-            cl.position.set((Math.random()-0.5)*1000, 80 + Math.random()*40, (Math.random()-0.5)*1000);
-            cl.scale.set(1+Math.random()*2, 0.5, 1+Math.random()*2);
-            scene.add(cl); clouds.push(cl);
-        }
-
-        // Świetliki
-        const firefliesGeo = new THREE.BufferGeometry();
-        const firefliesPos = new Float32Array(500 * 3);
-        for(let i=0; i<500*3; i++) firefliesPos[i] = (Math.random() - 0.5) * 200;
-        firefliesGeo.setAttribute('position', new THREE.BufferAttribute(firefliesPos, 3));
-        const firefliesMat = new THREE.PointsMaterial({color: 0xaaff00, size: 0.5, transparent: true, opacity: 0});
-        const fireflies = new THREE.Points(firefliesGeo, firefliesMat);
-        fireflies.position.y = 2;
-        scene.add(fireflies);
 
         // --- SYSTEM MULTIPLAYER ---
         function createTextSprite(msg) {
             const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
-            canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial";
-            context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64);
+            canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64);
             context.fillStyle = "#00ffff"; context.textAlign = "center"; context.fillText(msg, 128, 40);
-            const tex = new THREE.CanvasTexture(canvas); const mat = new THREE.SpriteMaterial({ map: tex });
-            const sprite = new THREE.Sprite(mat); sprite.scale.set(5, 1.25, 1); return sprite;
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) })); sprite.scale.set(5, 1.25, 1); return sprite;
         }
 
         function setupRemotePlayer(nick) {
-            remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5;
-            remotePlayerGroup.add(remotePlayerNickSprite); scene.add(remotePlayerGroup);
+            if (remotePlayerExists) return; // Zapobiega podwójnemu załadowaniu
+            remotePlayerExists = true;
 
+            remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5;
+            remotePlayerGroup.add(remotePlayerNickSprite); 
+            scene.add(remotePlayerGroup);
+
+            // 1. HOLOGRAM AWARYJNY (Zawsze widoczny, na wypadek gdyby model miał błąd)
+            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0xff00ff, wireframe: true}));
+            fallbackMesh.position.y = 1;
+            remotePlayerGroup.add(fallbackMesh);
+            remoteAvatarLoaded = true; // Pozwala na poruszanie hologramem
+
+            // 2. ŁADOWANIE PRAWDZIWEGO MODELU
             const loader = new GLTFLoader();
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = -1;
                 avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-                remotePlayerGroup.add(avatar); remoteAvatarLoaded = true;
+                
+                // Gdy model się wczyta, usuwamy różowy hologram i wstawiamy avatara
+                remotePlayerGroup.remove(fallbackMesh);
+                remotePlayerGroup.add(avatar);
+                
                 if (gltf.animations && gltf.animations.length > 0) {
                     remoteMixer = new THREE.AnimationMixer(avatar);
                     remoteMixer.clipAction(gltf.animations[0]).play();
                 }
+            }, undefined, (err) => {
+                console.warn("Nie można załadować modelu 3D. Przeglądarka zablokowała plik lub ścieżka jest zła. Używam Hologramu awaryjnego.", err);
             });
         }
 
+        // --- OBSŁUGA SIECI (Wymiana "Uścisku Dłoni") ---
         function handleNetworkData(data) {
             if(data.type === 'init') {
                 setupRemotePlayer(data.nick);
-                if(!isHost && data.blocks) { data.blocks.forEach(b => placeBlock(new THREE.Vector3(b.x, b.y, b.z), false, b.id)); }
+                // NAPRAWA BŁĘDU: Host musi odpowiedzieć swoim modelem i blokami, gdy nowy gracz dołączy!
+                if(isHost) {
+                    conn.send({ type: 'initReply', nick: myNick, blocks: builtBlocksNetwork });
+                }
+            }
+            if(data.type === 'initReply') {
+                setupRemotePlayer(data.nick);
+                if(data.blocks) data.blocks.forEach(b => placeBlock(new THREE.Vector3(b.x, b.y, b.z), false, b.id));
             }
             if(data.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(data.x, data.y, data.z); remotePlayerGroup.rotation.y = data.rotY; }
             if(data.type === 'build') { placeBlock(new THREE.Vector3(data.x, data.y, data.z), false, data.id); }
@@ -317,13 +251,24 @@
             if(data.type === 'music' && isYtReady && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(data.videoId); uiMusicStatus.innerText = "Muzyka: Odtwarzanie..."; }
         }
 
-        function startGame() {
-            uiMenu.style.display = 'none'; uiHud.style.display = 'block'; uiMusicStatus.style.display = 'block'; uiCrosshair.style.display = 'block';
+        // --- ZARZĄDZANIE MENU I STANEM GRY ---
+        function enterWorld() {
+            isGameRunning = true;
+            uiMenu.style.display = 'none';
+            // Ukrywamy startowe ekrany, pokazujemy pauzę na zapas
+            document.getElementById('login-panels').style.display = 'none';
+            document.getElementById('pause-panels').style.display = 'flex';
+            
+            uiHud.style.display = 'block';
+            uiMusicStatus.style.display = 'block';
+            uiCrosshair.style.display = 'block';
             controls.lock();
-            if(conn && conn.open) conn.send({ type: 'init', nick: myNick, blocks: builtBlocksNetwork });
+
+            // Powiedz innemu graczowi (jeśli już tu jest), że dołączyłeś
+            if(conn && conn.open) conn.send({ type: 'init', nick: myNick });
         }
 
-        // --- UI Events ---
+        // Host tworzy świat
         document.getElementById('btn-create').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Host";
             const shortCode = generateShortCode(); peer = new Peer(shortCode); 
@@ -332,9 +277,13 @@
                 document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden');
                 document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie na gracza..."; isHost = true;
             });
-            peer.on('connection', (connection) => { conn = connection; statusMsg.innerText = "Gracz połączony!"; conn.on('data', handleNetworkData); });
+            peer.on('connection', (connection) => { 
+                conn = connection; statusMsg.innerText = "Gracz połączony!"; 
+                conn.on('data', handleNetworkData); 
+            });
         });
 
+        // Klient dołącza
         document.getElementById('btn-join').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Klient";
             const code = document.getElementById('join-code-input').value.trim().toUpperCase();
@@ -342,18 +291,28 @@
             peer = new Peer(); statusMsg.innerText = "Łączenie...";
             peer.on('open', () => {
                 conn = peer.connect(code);
-                conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); setTimeout(startGame, 1000); });
+                conn.on('open', () => { 
+                    statusMsg.innerText = "Połączono!"; 
+                    conn.on('data', handleNetworkData); 
+                    setTimeout(enterWorld, 500); // Automatycznie wejdź do gry
+                });
             });
         });
 
-        document.getElementById('btn-start-host').addEventListener('click', startGame);
+        document.getElementById('btn-start-host').addEventListener('click', enterWorld);
+        
+        // NOWOŚĆ: Przycisk wznawiania gry w Menu Pauzy
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            uiMenu.style.display = 'none';
+            controls.lock();
+        });
 
         document.getElementById('btn-play-music').addEventListener('click', () => {
             const id = getYouTubeID(document.getElementById('yt-url-input').value);
             if(id) {
                 if(isYtReady) ytPlayer.loadVideoById(id); uiMusicStatus.innerText = "Muzyka: Twój wybór!";
                 if(conn && conn.open) conn.send({ type: 'music', videoId: id });
-                if(scene.children.length > 0) controls.lock(); 
+                controls.lock(); // Wróć automatycznie do gry po włączeniu nuty
             } else alert("Zły link!");
         });
 
@@ -364,12 +323,9 @@
         const builtBlocksNetwork = [];
 
         function placeBlock(position, sendToNetwork = true, id = Math.random().toString(36).substr(2, 9)) {
-            const block = new THREE.Mesh(blockGeo, blockMat);
-            block.position.copy(position); block.castShadow = true; block.receiveShadow = true;
-            block.userData = { id: id, isBlock: true }; // TAG do niszczenia
-            scene.add(block); buildableSurfaces.push(block); interactableBlocks.push(block);
+            const block = new THREE.Mesh(blockGeo, blockMat); block.position.copy(position); block.castShadow = true; block.receiveShadow = true;
+            block.userData = { id: id, isBlock: true }; scene.add(block); buildableSurfaces.push(block); interactableBlocks.push(block);
             block.updateMatrixWorld(); collidableObjects.push(new THREE.Box3().setFromObject(block));
-
             if(sendToNetwork) {
                 builtBlocksNetwork.push({x: position.x, y: position.y, z: position.z, id: id});
                 if (conn && conn.open) conn.send({ type: 'build', x: position.x, y: position.y, z: position.z, id: id });
@@ -379,13 +335,7 @@
         function removeBlockById(id, sendToNetwork = true) {
             const index = interactableBlocks.findIndex(b => b.userData.id === id);
             if(index !== -1) {
-                const block = interactableBlocks[index];
-                scene.remove(block);
-                interactableBlocks.splice(index, 1);
-                
-                // Usuwanie z tablic kolizji i budowania (uproszczone)
-                const buildIdx = buildableSurfaces.indexOf(block); if(buildIdx > -1) buildableSurfaces.splice(buildIdx, 1);
-                
+                const block = interactableBlocks[index]; scene.remove(block); interactableBlocks.splice(index, 1);
                 if(sendToNetwork && conn && conn.open) conn.send({ type: 'destroy', id: id });
             }
         }
@@ -393,34 +343,32 @@
         window.addEventListener('mousedown', (e) => {
             if (!controls.isLocked) return;
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            
-            if (e.button === 0) { // LPM - Buduj
+            if (e.button === 0) { // LPM
                 const intersects = raycaster.intersectObjects(buildableSurfaces, false);
                 if (intersects.length > 0) {
-                    const i = intersects[0];
-                    const pos = i.point.clone().add(i.face.normal.clone().multiplyScalar(1));
+                    const i = intersects[0]; const pos = i.point.clone().add(i.face.normal.clone().multiplyScalar(1));
                     pos.x = Math.floor(pos.x/2)*2+1; pos.y = Math.floor(pos.y/2)*2+1; pos.z = Math.floor(pos.z/2)*2+1;
-
                     const newBox = new THREE.Box3().setFromCenterAndSize(pos, new THREE.Vector3(1.9, 1.9, 1.9));
-                    const playerBox = new THREE.Box3().setFromCenterAndSize(
-                        new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y - 1, controls.getObject().position.z),
-                        new THREE.Vector3(1, 2, 1)
-                    );
+                    const playerBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y - 1, controls.getObject().position.z), new THREE.Vector3(1, 2, 1));
                     if (!newBox.intersectsBox(playerBox)) placeBlock(pos, true);
                 }
-            } else if (e.button === 2) { // PPM - Zniszcz
+            } else if (e.button === 2) { // PPM
                 const intersects = raycaster.intersectObjects(interactableBlocks, false);
-                if (intersects.length > 0) {
-                    removeBlockById(intersects[0].object.userData.id, true);
-                }
+                if (intersects.length > 0) removeBlockById(intersects[0].object.userData.id, true);
             }
         });
 
         // --- STEROWANIE & FIZYKA ---
         const controls = new PointerLockControls(camera, document.body);
-        controls.addEventListener('unlock', () => { uiMenu.style.display = 'flex'; uiHud.style.display = 'none'; uiCrosshair.style.display = 'none'; });
+        
+        // NAPRAWA ESCAPE: Pokazuje Menu Pauzy zamiast wywalać na początek
+        controls.addEventListener('unlock', () => { 
+            if (isGameRunning) {
+                uiMenu.style.display = 'flex'; // To teraz pokaże PANELE PAUZY
+            }
+        });
+        
         camera.position.set(0, 2, 0);
-
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false, isSprinting = false;
 
@@ -429,7 +377,7 @@
                 case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break;
                 case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break;
                 case 'ShiftLeft': isSprinting = true; break;
-                case 'Space': if(canJump){ velocity.y += 15; canJump = false; } break;
+                case 'Space': if(canJump && controls.isLocked){ velocity.y += 15; canJump = false; } break;
             }
         });
         document.addEventListener('keyup', (e) => {
@@ -443,61 +391,27 @@
         const playerBox = new THREE.Box3();
         function checkCol(p) {
             playerBox.setFromCenterAndSize(new THREE.Vector3(p.x, p.y - 1, p.z), new THREE.Vector3(1, 2, 1));
-            // Granice świata
             if(p.x > mapSize/2 || p.x < -mapSize/2 || p.z > mapSize/2 || p.z < -mapSize/2) return true;
             for(let box of collidableObjects) if(playerBox.intersectsBox(box)) return true;
             return false;
         }
 
-        // --- PĘTLA GRY (Cykl Dnia, Animacje) ---
-        const clock = new THREE.Clock();
-        let lastSendTime = 0, walkTime = 0, dayTime = 0;
+        // --- PĘTLA GRY ---
+        const clock = new THREE.Clock(); let lastSendTime = 0, walkTime = 0;
 
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const time = clock.getElapsedTime();
-
-            // CYKL DNIA I NOCY
-            dayTime += delta * 0.05; // Prędkość dnia
-            const sunAngle = dayTime;
-            sunLight.position.set(Math.cos(sunAngle)*500, Math.sin(sunAngle)*500, 0);
-            
-            let isNight = Math.sin(sunAngle) < 0;
-            if(isNight) {
-                scene.background.lerp(new THREE.Color(0x020205), 0.02);
-                scene.fog.color.lerp(new THREE.Color(0x020205), 0.02);
-                scene.fog.density = 0.03; // Gęstsza mgła
-                hemiLight.intensity = 0.1;
-                starsMat.opacity = Math.min(1, starsMat.opacity + 0.01);
-                firefliesMat.opacity = Math.min(0.8, firefliesMat.opacity + 0.01);
-            } else {
-                scene.background.lerp(new THREE.Color(0x87CEEB), 0.02);
-                scene.fog.color.lerp(new THREE.Color(0x87CEEB), 0.02);
-                scene.fog.density = 0.015;
-                hemiLight.intensity = 0.6;
-                starsMat.opacity = Math.max(0, starsMat.opacity - 0.05);
-                firefliesMat.opacity = Math.max(0, firefliesMat.opacity - 0.05);
-            }
-
-            // Animacja Natury
-            clouds.forEach((cl, i) => { cl.position.x += delta * (1 + i%2); if(cl.position.x > 500) cl.position.x = -500; });
-            crystals.forEach(c => { if(c.mesh) { c.mesh.position.y = 2 + Math.sin(time*2 + c.offset)*0.5; c.mesh.rotation.y += delta; } });
-            fireflies.rotation.y = time * 0.05;
+            const delta = Math.min(clock.getDelta(), 0.1); // Zabezpieczenie przed lagspike'ami
 
             if (remoteMixer) remoteMixer.update(delta);
 
             if (controls.isLocked) {
                 direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL); direction.normalize();
-                
-                // Head Bobbing & FOV (Sprint)
                 const speedMult = isSprinting ? 80.0 : 40.0;
-                camera.fov = THREE.MathUtils.lerp(camera.fov, isSprinting && (moveF||moveB||moveL||moveR) ? 90 : 75, 0.1);
-                camera.updateProjectionMatrix();
-
+                
                 if((moveF||moveB||moveL||moveR) && canJump) {
                     walkTime += delta * (isSprinting ? 15 : 10);
-                    camera.position.y = 2 + Math.sin(walkTime) * 0.15; // Bobbing
+                    camera.position.y = 2 + Math.sin(walkTime) * 0.15;
                 } else camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2, 0.1);
 
                 velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta; velocity.y -= 40.0 * delta; 
