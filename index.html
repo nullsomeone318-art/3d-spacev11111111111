@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Proximity Chat & Boombox</title>
+    <title>Epika 3D - Multi, Optymalizacja & Audio</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
         
-        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; }
-        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; }
+        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; text-align: center; }
+        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; margin-top: 20px;}
         #btn-init:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px #00ffff; }
         
         #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
         #loading-bar-container { width: 300px; height: 10px; background: #222; border-radius: 5px; margin-top: 20px; overflow: hidden; border: 1px solid #00ffff; }
         #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 10px #00ffff; transition: width 0.1s; }
-        #btn-force-start { margin-top: 20px; padding: 10px 20px; background: #330000; color: #ff0000; border: 1px solid #ff0000; cursor: pointer; }
 
         #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
         #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(15px); color: #00ffff; z-index: 200; display: none; }
@@ -36,10 +35,6 @@
         #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #00ffff; color: white; border-radius: 5px; }
         .msg-line { margin-bottom: 5px; text-shadow: 1px 1px 2px black;}
         .msg-nick { font-weight: bold; color: #00ffff; }
-
-        #cmd-input { font-family: monospace; color: #ff00ff; border-color: #ff00ff; }
-        #btn-cmd { border-color: #ff00ff; color: #ff00ff; }
-        #btn-cmd:hover { background: #ff00ff; color: #000; box-shadow: 0 0 15px #ff00ff; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
@@ -47,20 +42,20 @@
     <audio id="local-music-player" loop crossorigin="anonymous"></audio>
 
     <div id="init-screen">
-        <h1 style="font-size: 3em; text-shadow: 0 0 20px #00ffff;">EPIKA 3D</h1>
-        <p>Proximity Chat wymaga dostępu do mikrofonu</p>
-        <button id="btn-init">ZAINICJUJ SYSTEM</button>
+        <h1 style="font-size: 3em; text-shadow: 0 0 20px #00ffff; margin-bottom: 0;">EPIKA 3D</h1>
+        <p style="color: #aaa;">System komunikacji i audio 3D wymaga włączenia</p>
+        <button id="btn-init">ZAINICJUJ GRĘ</button>
     </div>
 
     <div id="loading-screen">
-        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE DANYCH...</h1>
+        <h1 id="loading-text" style="text-shadow: 0 0 20px #00ffff; font-size: 3em; margin:0;">ŁADOWANIE...</h1>
+        <p style="color: #aaa; margin-top: 5px;">Pobieranie plików z serwera</p>
         <div id="loading-bar-container"><div id="loading-bar"></div></div>
-        <button id="btn-force-start">Wymuś Start</button>
     </div>
 
     <div id="crosshair"></div>
     <div id="hud">
-        <b>[T]</b>: Czat | <b>[ESC]</b>: Menu<br>
+        <b>[T]</b>: Czat | <b>[ESC]</b>: Pauza/Menu<br>
         <b>LPM</b>: Zbuduj | <b>PPM</b>: Zniszcz<br>
         <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
     </div>
@@ -98,7 +93,9 @@
         <div id="pause-panels" class="hidden" style="flex-direction: column; align-items: center;">
             <h2 style="color: #fff; text-shadow: 0 0 10px #fff;">PAUZA</h2>
             <div class="panels-container">
-                <div class="panel"><button id="btn-resume" style="background: #00ffff; color:#000;">WZNÓW GRĘ</button></div>
+                <div class="panel">
+                    <button id="btn-resume" style="background: #00ffff; color:#000;">WZNÓW GRĘ</button>
+                </div>
                 
                 <div class="panel" style="border-color: #00ffaa;">
                     <h3 style="color: #00ffaa;">PROXIMITY CHAT</h3>
@@ -107,7 +104,8 @@
                 </div>
 
                 <div class="panel" style="border-color: #ffff00;">
-                    <h3 style="color: #ffff00;">BOOMBOX (Folder /music/)</h3>
+                    <h3 style="color: #ffff00;">BOOMBOX SERWEROWY</h3>
+                    <p style="font-size: 12px; color: #aaa; margin-bottom: 5px;">Pliki z folderu /music/ na GitHubie</p>
                     <select id="music-select">
                         <option value="">-- Wybierz piosenkę --</option>
                     </select>
@@ -117,8 +115,8 @@
 
                 <div class="panel" style="border-color: #ff00ff;">
                     <h3 style="color: #ff00ff;">KONSOLA ADMINA</h3>
-                    <input type="text" id="cmd-input" placeholder="np. /map klasyk"><br>
-                    <button id="btn-cmd">Wykonaj Komendę</button>
+                    <input type="text" id="cmd-input" placeholder="np. /map klasyk" style="border-color: #ff00ff;"><br>
+                    <button id="btn-cmd" style="border-color: #ff00ff; color: #ff00ff;">Wykonaj Komendę</button>
                 </div>
             </div>
         </div>
@@ -137,21 +135,28 @@
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // ==========================================
-        // BAZA PIOSENEK DO BOOMBOXA
-        // ==========================================
+        // =========================================================================
+        // TUTAJ WPISZ DOKŁADNE NAZWY SWOICH PIOSENEK (Z folderu /music/ na GitHubie)
+        // =========================================================================
         const myMusicFiles = [
             "lady_gaga.mp3",  
-            "epic_song.mp3",
-            "ambient_backrooms.wav"
+            "inna_piosenka.mp3",
+            "backrooms_ambient.wav"
         ];
+
+        // Automatyczne wypełnianie listy piosenek
         const musicSelect = document.getElementById('music-select');
-        myMusicFiles.forEach(file => { let option = document.createElement('option'); option.value = file; option.text = file; musicSelect.appendChild(option); });
+        myMusicFiles.forEach(file => {
+            let option = document.createElement('option');
+            option.value = file; option.text = file;
+            musicSelect.appendChild(option);
+        });
         const musicPlayer = document.getElementById('local-music-player');
 
         // --- ZMIENNE GLOBALNE ---
@@ -162,86 +167,56 @@
         const uiCrosshair = document.getElementById('crosshair'), statusMsg = document.getElementById('status-msg');
         function generateShortCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = ''; for (let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length)); return res; }
 
-        // --- SCENA 3D I AUDIO 3D (PROXIMITY CHAT) ---
+        // --- SCENA 3D I AUDIO 3D ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x050508);
         scene.fog = new THREE.FogExp2(0x050508, 0.015); 
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         
-        // NOWOŚĆ: Audio Listener na Głowie Gracza
-        const audioListener = new THREE.AudioListener();
-        camera.add(audioListener);
-        
-        // NOWOŚĆ: Dźwięk Pozycyjny (Głos Znajomego z jego Avatara)
+        const audioListener = new THREE.AudioListener(); camera.add(audioListener);
         const remotePositionalAudio = new THREE.PositionalAudio(audioListener);
-        remotePositionalAudio.setRefDistance(5); // Zaczyna cichnąć od 5 metra
-        remotePositionalAudio.setMaxDistance(50); // Na 50 metrach go nie słychać
-        remotePositionalAudio.setRolloffFactor(2); // Jak mocno cichnie wraz z odległością
-        remotePlayerGroup.add(remotePositionalAudio); // Doczepiamy dźwięk do modelu kumpla!
+        remotePositionalAudio.setRefDistance(5); remotePositionalAudio.setMaxDistance(50); remotePositionalAudio.setRolloffFactor(2); 
+        remotePlayerGroup.add(remotePositionalAudio); 
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        // OPTYMALIZACJA: antialias: false zabija lagi, PixelRatio ograniczone do max 1.5
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
+        
+        renderer.shadowMap.enabled = true; 
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace; 
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2; bloomPass.strength = 1.2; bloomPass.radius = 0.5;
+        bloomPass.threshold = 0.2; bloomPass.strength = 1.0; bloomPass.radius = 0.5;
         const composer = new EffectComposer(renderer); composer.addPass(renderScene); composer.addPass(bloomPass);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambientLight);
         camera.position.set(0, 2, 0); scene.add(camera);
 
-        // --- ZAAWANSOWANY MIXER AUDIO (Voice + Muzyka) ---
-        let localMicStream = null;
-        let mixedStreamDestination = null;
-        let isMicMuted = false;
-        let isDeafened = false;
+        // --- ZAAWANSOWANY MIXER AUDIO ---
+        let localMicStream = null, mixedStreamDestination = null, isMicMuted = false, isDeafened = false;
 
         async function setupAudioSystem() {
-            // Wymuszenie startu AudioContextu w Three.js po kliknięciu
-            if (audioListener.context.state === 'suspended') {
-                await audioListener.context.resume();
-            }
-
+            if (audioListener.context.state === 'suspended') await audioListener.context.resume();
             try {
-                // Pobieramy mikrofon
                 localMicStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                console.log("Mikrofon podłączony!");
-                
-                // Tworzymy punkt wyjściowy dla zmiksowanego strumienia
                 const audioCtx = audioListener.context;
                 mixedStreamDestination = audioCtx.createMediaStreamDestination();
-                
-                // KABEL 1: Podłączamy mikrofon do wyjścia sieciowego
-                const micSourceNode = audioCtx.createMediaStreamSource(localMicStream);
-                micSourceNode.connect(mixedStreamDestination);
-
-                // KABEL 2: Podłączamy Odtwarzacz MP3 do wyjścia sieciowego ORAZ do Twoich głośników
+                const micSourceNode = audioCtx.createMediaStreamSource(localMicStream); micSourceNode.connect(mixedStreamDestination);
                 const musicSourceNode = audioCtx.createMediaElementSource(musicPlayer);
-                musicSourceNode.connect(mixedStreamDestination); // Wysyła w sieć
-                musicSourceNode.connect(audioCtx.destination);   // Żebyś Ty też słyszał co puszczasz
-                
-            } catch (err) {
-                console.warn("Brak mikrofonu. Nadawanie głosowe niedostępne.", err);
-            }
+                musicSourceNode.connect(mixedStreamDestination); musicSourceNode.connect(audioCtx.destination);   
+            } catch (err) { console.warn("Brak mikrofonu. Proximity Chat nie zadziała.", err); }
         }
 
-        // Obsługa przycisków Voice w Menu
         document.getElementById('btn-toggle-mic').addEventListener('click', (e) => {
-            if(localMicStream) {
-                isMicMuted = !isMicMuted;
-                localMicStream.getAudioTracks()[0].enabled = !isMicMuted;
-                e.target.innerText = isMicMuted ? "Włącz Mikrofon" : "Wyłącz Mikrofon";
-                e.target.style.color = isMicMuted ? "red" : "#00ffaa";
-            }
+            if(localMicStream) { isMicMuted = !isMicMuted; localMicStream.getAudioTracks()[0].enabled = !isMicMuted; e.target.innerText = isMicMuted ? "Włącz Mikrofon" : "Wyłącz Mikrofon"; e.target.style.color = isMicMuted ? "red" : "#00ffaa"; }
         });
         document.getElementById('btn-toggle-sound').addEventListener('click', (e) => {
-            isDeafened = !isDeafened;
-            remotePositionalAudio.setVolume(isDeafened ? 0 : 1); // Wycisza model kumpla
-            e.target.innerText = isDeafened ? "Odcisz Wszystkich" : "Wycisz Wszystkich";
-            e.target.style.color = isDeafened ? "red" : "#00ffaa";
+            isDeafened = !isDeafened; remotePositionalAudio.setVolume(isDeafened ? 0 : 1); e.target.innerText = isDeafened ? "Odcisz Wszystkich" : "Wycisz Wszystkich"; e.target.style.color = isDeafened ? "red" : "#00ffaa";
         });
 
         // --- CZAT TEKSTOWY ---
@@ -250,33 +225,37 @@
         let isChatting = false;
 
         function addChatMessage(sender, text, color = "#00ffff") {
-            const div = document.createElement('div'); div.className = "msg-line";
-            div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
+            const div = document.createElement('div'); div.className = "msg-line"; div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
             chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const txt = chatInput.value.trim();
-                if (txt !== '') {
-                    addChatMessage(myNick, txt, "#00ff00");
-                    if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick });
-                    chatInput.value = '';
-                }
+                if (txt !== '') { addChatMessage(myNick, txt, "#00ff00"); if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); chatInput.value = ''; }
                 isChatting = false; chatInputContainer.style.display = 'none'; controls.lock();
             }
         });
 
-        // --- SYSTEM ŁADOWANIA MAPY I ŚRODOWISKA ---
+        // --- SYSTEM ŁADOWANIA (Automatyczny, bez wymuszania) ---
         const manager = new THREE.LoadingManager();
-        manager.onProgress = function (url, loaded, total) { document.getElementById('loading-bar').style.width = ((loaded / total) * 100) + '%'; };
-        manager.onLoad = function () { hideLoadingScreen(); };
-        manager.onError = function (url) { console.error('Błąd: ' + url); };
-
-        function hideLoadingScreen() { const ls = document.getElementById('loading-screen'); ls.style.opacity = '0'; setTimeout(() => { ls.style.display = 'none'; uiMenu.style.display = 'flex'; }, 500); }
-        document.getElementById('btn-force-start').addEventListener('click', hideLoadingScreen);
+        manager.onProgress = function (url, loaded, total) { 
+            document.getElementById('loading-bar').style.width = ((loaded / total) * 100) + '%'; 
+        };
+        manager.onLoad = function () { 
+            const ls = document.getElementById('loading-screen'); 
+            ls.style.opacity = '0'; 
+            setTimeout(() => { 
+                ls.style.display = 'none'; 
+                if(!isGameRunning) uiMenu.style.display = 'flex'; 
+            }, 500); 
+        };
 
         const loader = new GLTFLoader(manager);
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+        loader.setDRACOLoader(dracoLoader);
+
         const mapColliders = []; const classicMapGroup = new THREE.Group(); 
         const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x111111 })); 
         floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.y = -0.5; scene.add(floorMesh);
@@ -289,18 +268,39 @@
             for(let i=0; i<30; i++) {
                 const isNeon = Math.random() > 0.7;
                 const pillar = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: isNeon ? 0x000000 : 0x222222, emissive: isNeon ? new THREE.Color(Math.random(), Math.random(), 1) : 0x000000, emissiveIntensity: isNeon ? 5 : 0, roughness: 0.2, metalness: 0.8 }));
-                pillar.position.set((Math.random()-0.5)*150, 10, (Math.random()-0.5)*150);
-                if (pillar.position.length() < 10) pillar.position.x += 15;
+                pillar.position.set((Math.random()-0.5)*150, 10, (Math.random()-0.5)*150); if (pillar.position.length() < 10) pillar.position.x += 15;
                 classicMapGroup.add(pillar); pillar.updateMatrixWorld(); mapColliders.push(new THREE.Box3().setFromObject(pillar));
             }
             scene.add(classicMapGroup); camera.position.set(0, 2, 20);
         }
 
+        let currentMapMesh = null;
+        function loadMap(mapFolderName, sendToNetwork = true) {
+            if (currentMapMesh) scene.remove(currentMapMesh);
+            scene.remove(classicMapGroup); while(classicMapGroup.children.length > 0) classicMapGroup.remove(classicMapGroup.children[0]);
+            mapColliders.length = 0; mapColliders.push(floorMesh); 
+            
+            if (mapFolderName === 'klasyk') {
+                generateClassicMap();
+                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: 'klasyk' });
+                return;
+            }
+
+            document.getElementById('loading-screen').style.display = 'flex';
+            document.getElementById('loading-screen').style.opacity = '1';
+
+            loader.load('./models/' + mapFolderName + '/scene.gltf', (gltf) => {
+                currentMapMesh = gltf.scene;
+                currentMapMesh.traverse((node) => { if (node.isMesh) { node.receiveShadow = true; node.castShadow = true; mapColliders.push(node); } });
+                currentMapMesh.position.set(0, 0, 0); scene.add(currentMapMesh);
+                camera.position.set(0, 2, 0);
+                if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandMap', mapName: mapFolderName });
+            });
+        }
+
         // --- SYSTEM SIECIOWY ---
         function createTextSprite(msg) {
-            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
-            canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64);
-            context.fillStyle = "#00ffff"; context.textAlign = "center"; context.fillText(msg, 128, 40);
+            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d'); canvas.width = 256; canvas.height = 64; context.font = "Bold 30px Arial"; context.fillStyle = "rgba(0,0,0,0.5)"; context.fillRect(0, 0, 256, 64); context.fillStyle = "#00ffff"; context.textAlign = "center"; context.fillText(msg, 128, 40);
             return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
         }
 
@@ -308,13 +308,10 @@
             if (remotePlayerExists) return; remotePlayerExists = true;
             remotePlayerNickSprite = createTextSprite(nick); remotePlayerNickSprite.position.y = 2.5; remotePlayerNickSprite.scale.set(5, 1.25, 1);
             remotePlayerGroup.add(remotePlayerNickSprite); scene.add(remotePlayerGroup);
-
-            const remoteLight = new THREE.PointLight(0x00ffff, 1, 10); remoteLight.position.y = 1; remotePlayerGroup.add(remoteLight);
             const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1.2), new THREE.MeshBasicMaterial({color: 0x00ffff, wireframe: true})); fallbackMesh.position.y = 1; remotePlayerGroup.add(fallbackMesh); remoteAvatarLoaded = true;
 
             loader.load('./models/avatar/scene.gltf', (gltf) => {
-                const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; 
-                avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+                const avatar = gltf.scene; avatar.scale.set(1, 1, 1); avatar.position.y = 0; avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
                 remotePlayerGroup.remove(fallbackMesh); remotePlayerGroup.add(avatar);
                 if (gltf.animations && gltf.animations.length > 0) { remoteMixer = new THREE.AnimationMixer(avatar); remoteMixer.clipAction(gltf.animations[0]).play(); }
             });
@@ -325,20 +322,22 @@
             if(data.type === 'initReply') { setupRemotePlayer(data.nick); }
             if(data.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(data.x, data.y, data.z); remotePlayerGroup.rotation.y = data.rotY; }
             if(data.type === 'chat') { addChatMessage(data.nick, data.text, "#00ffff"); } 
+            if(data.type === 'commandMap') { loadMap(data.mapName, false); }
+            if(data.type === 'music') { 
+                musicPlayer.src = './music/' + data.fileName;
+                musicPlayer.play().catch(e => console.log(e));
+            }
         }
 
-        // --- INICJALIZACJA STARTOWA ---
         document.getElementById('btn-init').addEventListener('click', async () => {
-            document.getElementById('init-screen').style.display = 'none';
-            document.getElementById('loading-screen').style.display = 'flex';
+            document.getElementById('init-screen').style.display = 'none'; document.getElementById('loading-screen').style.display = 'flex';
+            await setupAudioSystem();
             
-            await setupAudioSystem(); // Uruchamia system mixowania audio
-            
-            // Szuka piosenki 'lady' i odpala
             const ladySong = myMusicFiles.find(file => file.toLowerCase().includes('lady'));
             if (ladySong) { musicPlayer.src = './music/' + ladySong; musicPlayer.volume = 0.5; musicPlayer.play(); }
             
             generateClassicMap();
+            setTimeout(() => { if(document.getElementById('loading-screen').style.display !== 'none') manager.onLoad(); }, 1500);
         });
 
         function enterWorld() {
@@ -350,68 +349,38 @@
 
         function setupPeerEvents(peerInstance) {
             peerInstance.on('call', (call) => {
-                console.log("Odbieranie połączenia audio...");
-                // Odpowiadamy naszym zmiksowanym streamem (Mic + Ewentualna Muzyka)
                 call.answer(mixedStreamDestination ? mixedStreamDestination.stream : null); 
-                call.on('stream', (remoteStream) => {
-                    // Magia Proximity Chat: Zamiast odtwarzać to w <audio>, przekazujemy to do Awatara 3D!
-                    remotePositionalAudio.setMediaStreamSource(remoteStream);
-                });
+                call.on('stream', (remoteStream) => { remotePositionalAudio.setMediaStreamSource(remoteStream); });
             });
         }
 
-        document.getElementById('btn-create').addEventListener('click', () => { 
-            myNick = document.getElementById('my-nick').value || "Host"; 
-            peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; 
-            peer.on('open', (id) => { 
-                document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; 
-                setupPeerEvents(peer);
-            }); 
-            peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); 
-        });
+        document.getElementById('btn-create').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Host"; peer = new Peer(generateShortCode()); statusMsg.innerText = "Nawiązywanie..."; peer.on('open', (id) => { document.getElementById('btn-create').classList.add('hidden'); document.getElementById('code-container').classList.remove('hidden'); document.getElementById('my-code-display').innerText = id; statusMsg.innerText = "Oczekiwanie..."; isHost = true; setupPeerEvents(peer); }); peer.on('connection', (c) => { conn = c; statusMsg.innerText = "Zsynchronizowano!"; conn.on('data', handleNetworkData); }); });
+        document.getElementById('btn-join').addEventListener('click', () => { myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; peer = new Peer(); statusMsg.innerText = "Łączenie..."; peer.on('open', () => { setupPeerEvents(peer); conn = peer.connect(code); conn.on('open', () => { statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); if (mixedStreamDestination) { const call = peer.call(code, mixedStreamDestination.stream); call.on('stream', (remoteStream) => { remotePositionalAudio.setMediaStreamSource(remoteStream); }); } setTimeout(enterWorld, 500); }); }); });
 
-        document.getElementById('btn-join').addEventListener('click', () => { 
-            myNick = document.getElementById('my-nick').value || "Klient"; const code = document.getElementById('join-code-input').value.trim().toUpperCase(); if(code.length !== 5) return; 
-            peer = new Peer(); statusMsg.innerText = "Łączenie..."; 
-            peer.on('open', () => { 
-                setupPeerEvents(peer);
-                conn = peer.connect(code); 
-                conn.on('open', () => { 
-                    statusMsg.innerText = "Połączono!"; conn.on('data', handleNetworkData); 
-                    
-                    // Dzwonimy do Hosta naszym zmiksowanym sygnałem!
-                    if (mixedStreamDestination) {
-                        const call = peer.call(code, mixedStreamDestination.stream);
-                        call.on('stream', (remoteStream) => {
-                            remotePositionalAudio.setMediaStreamSource(remoteStream);
-                        });
-                    }
-                    setTimeout(enterWorld, 500); 
-                }); 
-            }); 
+        // --- NAPRAWIONY KLAWISZ ESC (PAUZA) ---
+        const controls = new PointerLockControls(camera, document.body);
+        controls.addEventListener('unlock', () => { 
+            if (isGameRunning && !isChatting) {
+                uiMenu.style.display = 'flex'; 
+                document.getElementById('pause-panels').style.display = 'flex';
+                document.getElementById('login-panels').style.display = 'none';
+                uiHud.style.display = 'none';
+                uiCrosshair.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('btn-resume').addEventListener('click', () => { 
+            uiMenu.style.display = 'none'; 
+            uiHud.style.display = 'block';
+            uiCrosshair.style.display = 'block';
+            controls.lock(); 
         });
 
         document.getElementById('btn-start-host').addEventListener('click', enterWorld);
-        document.getElementById('btn-resume').addEventListener('click', () => { uiMenu.style.display = 'none'; controls.lock(); });
-
-        // --- OBSŁUGA ODTWARZACZA MUZYKI ---
-        document.getElementById('btn-play-local').addEventListener('click', () => {
-            // Gra tylko u mnie (odłączona od miksera sieciowego)
-            // Ponieważ użyliśmy createMediaElementSource, nie możemy go odłączyć od Mixera tak łatwo bez niszczenia struktury.
-            // Najlepszy sposób to po prostu odpalić utwór lokalnie. Puszczamy to cicho.
-            const file = musicSelect.value;
-            if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); }
-        });
-        document.getElementById('btn-share-local').addEventListener('click', () => {
-            // Ponieważ podłączyliśmy musicPlayer do MixedStreamu, zwykły "play" puszcza go do neta!
-            const file = musicSelect.value;
-            if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); }
-            controls.lock(); // Wracamy do gry, muza gra jako boombox!
-        });
-
-        // --- STEROWANIE ---
-        const controls = new PointerLockControls(camera, document.body);
-        controls.addEventListener('unlock', () => { if (isGameRunning && !isChatting) uiMenu.style.display = 'flex'; });
+        document.getElementById('btn-cmd').addEventListener('click', () => { const cmd = document.getElementById('cmd-input').value.trim().toLowerCase(); if (cmd.startsWith('/map ')) { const mapName = cmd.split(' ')[1]; if (mapName) { loadMap(mapName, true); controls.lock(); } } document.getElementById('cmd-input').value = ""; });
+        
+        document.getElementById('btn-play-local').addEventListener('click', () => { const file = musicSelect.value; if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); } });
+        document.getElementById('btn-share-local').addEventListener('click', () => { const file = musicSelect.value; if (file) { musicPlayer.src = './music/' + file; musicPlayer.play(); if(conn && conn.open) conn.send({ type: 'music', fileName: file }); controls.lock(); } });
 
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
