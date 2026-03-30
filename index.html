@@ -3,50 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Niezawodny Silnik v1000</title>
+    <title>Epika 3D - The Backrooms (RTX, Voice Chat, HD)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
         
-        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ffaa00; transition: opacity 0.5s; }
+        /* EKRAN STARTOWY (Wymagany do mikrofonu) */
+        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ffaa00; text-align: center; }
+        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #ffaa00; border: 2px solid #ffaa00; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; margin-top: 20px;}
+        #btn-init:hover { background: #ffaa00; color: #000; box-shadow: 0 0 30px #ffaa00; }
+        
+        /* EKRAN ŁADOWANIA MAPY */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #ffaa00; transition: opacity 0.5s ease; }
         #loading-bar-wrap { width: 300px; height: 6px; background: #222; margin-top: 20px; border-radius: 3px; overflow: hidden;}
         #loading-bar { width: 0%; height: 100%; background: #ffaa00; box-shadow: 0 0 15px #ffaa00; transition: width 0.2s; }
         #error-log { color: #ff3333; margin-top: 15px; font-family: monospace; max-width: 80%; text-align: center; }
 
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; }
+        /* INTERFEJS */
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
+        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 15px; border-right: 4px solid #ffaa00; z-index: 100; pointer-events: none; display: none; font-family: monospace; font-size: 14px; line-height: 1.6; text-align: right;}
+        
+        /* MENU GŁÓWNE / PAUZA */
         #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); color: #ffaa00; z-index: 200; }
         .panel { background: rgba(20,20,10,0.9); padding: 20px; border: 1px solid #ffaa00; border-radius: 10px; text-align: center; margin: 10px; width: 300px; }
         input, select { padding: 10px; margin: 10px 0; background: #111; border: 1px solid #ffaa00; color: white; width: 80%; border-radius: 5px; text-align: center; font-weight: bold;}
         button { padding: 12px 20px; background: transparent; color: #ffaa00; border: 2px solid #ffaa00; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s;}
         button:hover { background: #ffaa00; color: #000; }
+
+        /* CZAT TEKSTOWY */
+        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 350px; height: 250px; display: none; flex-direction: column; z-index: 150; }
+        #chat-messages { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 5px; padding: 10px; overflow-y: auto; color: white; font-family: sans-serif; font-size: 14px; margin-bottom: 5px; display: flex; flex-direction: column; justify-content: flex-end;}
+        #chat-input-container { display: none; }
+        #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #ffaa00; color: white; border-radius: 5px; pointer-events: auto;}
+        .msg-line { margin-bottom: 5px; text-shadow: 1px 1px 2px black;}
+        .msg-nick { font-weight: bold; color: #ffaa00; }
         
-        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 15px; border-right: 4px solid #ffaa00; z-index: 100; pointer-events: none; display: none; font-family: monospace; font-size: 14px; line-height: 1.6;}
         .hidden { display: none !important; }
+        .vhs { text-shadow: 2px 0 red, -2px 0 blue; letter-spacing: 5px; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <audio id="local-music-player" loop crossorigin="anonymous"></audio>
 
+    <div id="init-screen">
+        <h1 class="vhs" style="font-size: 4em; margin-bottom: 10px;">BACKROOMS HD</h1>
+        <p style="color: #aaa; max-width: 600px;">Zezwól na dostęp do mikrofonu, aby korzystać z Proximity Voice Chat ze znajomymi w labiryncie.</p>
+        <button id="btn-init">ZAINICJUJ SYSTEM</button>
+    </div>
+
     <div id="loading-screen">
-        <h1 style="font-size: 3em; text-shadow: 0 0 20px #ffaa00; margin-bottom: 5px;">INICJALIZACJA</h1>
-        <p id="load-status">Trwa pobieranie danych ze środowiska...</p>
+        <h1 class="vhs" style="font-size: 3em; margin-bottom: 5px;">ŁADOWANIE MAPY</h1>
+        <p id="load-status">Pobieranie plików .gltf z serwera...</p>
         <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
         <p id="error-log"></p>
-        <button id="btn-force-start" class="hidden" style="width: 200px; margin-top: 30px; border-color: #00ffff; color: #00ffff;">WYMUŚ WEJŚCIE</button>
+        <button id="btn-force-start" class="hidden" style="width: 200px; margin-top: 30px; border-color: #ff3333; color: #ff3333;">WYMUŚ START</button>
     </div>
 
     <div id="crosshair"></div>
 
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Napisz i wciśnij ENTER..." autocomplete="off">
+        </div>
+    </div>
+
     <div id="hud">
-        <b>[F]</b>: Latarka<br>
-        <b>[R]</b>: Ratunek (Utknięcie)<br>
-        <b>[ESC]</b>: Menu Pauzy<br>
+        <b>[T]</b>: Czat Tekstowy<br>
+        <b>[F]</b>: Włącz/Wyłącz Latarkę<br>
+        <b>[R]</b>: Reset Pozycji<br>
+        <b>[ESC]</b>: Menu / Pauza<br>
         <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
     </div>
 
     <div id="menu">
-        <h1 style="font-size: 4em; text-shadow: 0 0 20px #ffaa00; margin-bottom: 20px; letter-spacing: 5px;">BACKROOMS</h1>
+        <h1 class="vhs" style="font-size: 4em; margin-bottom: 20px;">BACKROOMS</h1>
         
         <div id="login-ui">
             <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Eksplorator">
@@ -63,15 +95,26 @@
                     <button id="btn-join">POŁĄCZ</button>
                 </div>
             </div>
-            <button id="btn-offline" style="width:250px; margin-top:30px; border-color:#888; color:#888;">GRAJ OFFLINE (SOLO)</button>
+            <button id="btn-offline" style="width:250px; margin-top:30px; border-color:#888; color:#888;">Eksploruj Solo (Offline)</button>
         </div>
 
         <div id="pause-ui" class="hidden">
             <div class="panel">
                 <button id="btn-resume" style="background: #ffaa00; color: #000;">WZNÓW GRĘ</button>
-                <h3 style="color:#00ffff; margin-top:30px;">Odtwarzacz (Folder /music/)</h3>
-                <select id="music-select"></select>
-                <button id="btn-play-music" style="border-color:#00ffff; color:#00ffff;">GRAJ DLA WSZYSTKICH</button>
+            </div>
+            
+            <div class="panel" style="border-color: #00ffaa;">
+                <h3 style="color: #00ffaa;">VOICE CHAT 3D</h3>
+                <button id="btn-toggle-mic" style="border-color: #00ffaa; color: #00ffaa;">Wycisz Mój Mikrofon</button>
+                <button id="btn-toggle-sound" style="border-color: #00ffaa; color: #00ffaa;">Wycisz Innych Graczy</button>
+            </div>
+
+            <div class="panel" style="border-color: #00ffff;">
+                <h3 style="color:#00ffff;">ODTWARZACZ (Folder /music/)</h3>
+                <select id="music-select">
+                    <option value="">-- Wybierz plik z GitHuba --</option>
+                </select>
+                <button id="btn-play-music" style="border-color:#00ffff; color:#00ffff;">Graj dla Wszystkich</button>
             </div>
         </div>
     </div>
@@ -89,51 +132,126 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        
+        // EFEKTY RTX (Post-Processing)
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
         // =======================================================
-        // TWOJA MUZYKA (Zmień na swoje pliki z folderu na GitHubie)
+        // TWOJA MUZYKA (Z folderu /music/ na GitHubie)
         // =======================================================
-        const myMusicFiles = ["lady_gaga.mp3", "ambient.mp3"]; 
+        const myMusicFiles = [
+            "lady_gaga.mp3", 
+            "ambient_backrooms.mp3"
+        ]; 
         const musicSelect = document.getElementById('music-select');
         myMusicFiles.forEach(f => { let o = document.createElement('option'); o.value=f; o.text=f; musicSelect.appendChild(o); });
         const musicPlayer = document.getElementById('local-music-player');
 
         // --- ZMIENNE GLOBALNE ---
-        let peer = null, conn = null, myNick = "Eksplorator", isGameRunning = false;
+        let peer = null, conn = null, myNick = "Eksplorator", isGameRunning = false, isChatting = false;
         let remotePlayerGroup = new THREE.Group(), remoteAvatarLoaded = false;
         const mapColliders = [];
 
-        // --- ULTRA STABILNY RENDERER ---
+        // --- RENDERER HD & RTX ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        scene.fog = new THREE.FogExp2(0x050505, 0.015);
+        scene.background = new THREE.Color(0x020202);
+        scene.fog = new THREE.FogExp2(0x020202, 0.02); // Gęsta mgła w labiryncie
         
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         
+        // AUDIO 3D
+        const audioListener = new THREE.AudioListener(); 
+        camera.add(audioListener);
+        const remotePositionalAudio = new THREE.PositionalAudio(audioListener);
+        remotePositionalAudio.setRefDistance(3);   // Jak blisko jest głośno
+        remotePositionalAudio.setMaxDistance(40);  // Kiedy zanika całkowicie
+        remotePositionalAudio.setRolloffFactor(2);
+        remotePlayerGroup.add(remotePositionalAudio); 
+
         const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); // Blokada lagów
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2)); // Optymalizacja FPS
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace; // Kolory HD
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // Latarka doczepiona do kamery
-        const flashlight = new THREE.SpotLight(0xfff5b5, 3, 40, Math.PI/4, 0.5, 1);
+        // POST-PROCESSING (Bloom/Glow)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.4, 0.85);
+        const composer = new EffectComposer(renderer); 
+        composer.addPass(renderScene); 
+        composer.addPass(bloomPass);
+
+        // LATARKA GRACZA
+        const flashlight = new THREE.SpotLight(0xfff5b5, 4, 30, Math.PI/5, 0.5, 1);
         flashlight.castShadow = true;
         camera.add(flashlight);
         flashlight.target.position.set(0, 0, -1);
         camera.add(flashlight.target);
         scene.add(camera);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1); 
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); // Bardzo mrocznie
         scene.add(ambientLight);
 
-        // Referencyjny sześcian na środku (żebyś wiedział gdzie jest punkt 0,0,0)
-        const centerCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial({color: 0x00ffff}));
-        centerCube.position.set(0, 1, 0);
-        scene.add(centerCube);
+        // --- SYSTEM AUDIO / MIKROFONU ---
+        let localMicStream = null, isMicMuted = false, isDeafened = false;
 
-        // --- SYSTEM ŁADOWANIA Z ZABEZPIECZENIAMI ---
+        async function initAudioSystem() {
+            if (audioListener.context.state === 'suspended') await audioListener.context.resume();
+            try {
+                localMicStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                console.log("Mikrofon aktywny!");
+            } catch (err) { 
+                console.warn("Brak mikrofonu. Voice chat będzie niemożliwy.", err); 
+            }
+        }
+
+        document.getElementById('btn-toggle-mic').addEventListener('click', (e) => {
+            if(localMicStream) { 
+                isMicMuted = !isMicMuted; 
+                localMicStream.getAudioTracks()[0].enabled = !isMicMuted; 
+                e.target.innerText = isMicMuted ? "Włącz Mój Mikrofon" : "Wycisz Mój Mikrofon"; 
+                e.target.style.color = isMicMuted ? "red" : "#00ffaa"; 
+            }
+        });
+        document.getElementById('btn-toggle-sound').addEventListener('click', (e) => {
+            isDeafened = !isDeafened; 
+            remotePositionalAudio.setVolume(isDeafened ? 0 : 1); 
+            e.target.innerText = isDeafened ? "Odcisz Innych" : "Wycisz Innych"; 
+            e.target.style.color = isDeafened ? "red" : "#00ffaa";
+        });
+
+        // --- CZAT TEKSTOWY ---
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatInputContainer = document.getElementById('chat-input-container');
+
+        function addChatMessage(sender, text, color = "#ffaa00") {
+            const div = document.createElement('div'); div.className = "msg-line"; 
+            div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
+            chatMessages.appendChild(div); 
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const txt = chatInput.value.trim();
+                if (txt !== '') { 
+                    addChatMessage(myNick, txt, "#00ff00"); 
+                    if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); 
+                    chatInput.value = ''; 
+                }
+                isChatting = false; 
+                chatInputContainer.style.display = 'none'; 
+                controls.lock();
+            }
+        });
+
+        // --- SYSTEM ŁADOWANIA MAPY BACKROOMS ---
         const manager = new THREE.LoadingManager();
         const loader = new GLTFLoader(manager);
         let mapLoadedSuccess = false;
@@ -141,7 +259,7 @@
         manager.onProgress = (url, loaded, total) => {
             let p = (loaded/total)*100;
             document.getElementById('loading-bar').style.width = p + '%';
-            document.getElementById('load-status').innerText = `Pobieranie plików: ${Math.round(p)}%`;
+            document.getElementById('load-status').innerText = `Dekodowanie wektorów: ${Math.round(p)}%`;
         };
 
         function showMenu() {
@@ -149,108 +267,122 @@
             setTimeout(() => {
                 document.getElementById('loading-screen').style.display = 'none';
                 document.getElementById('menu').style.display = 'flex';
-                // Odpal muzykę "lady" jeśli istnieje
+                
+                // Autoplay muzyki "lady" jeśli jest w tablicy (wymaga wcześniejszej inicjalizacji audio)
                 let lady = myMusicFiles.find(f => f.toLowerCase().includes('lady'));
-                if(lady) { musicPlayer.src = './music/'+lady; musicPlayer.play().catch(()=>{}); }
+                if(lady) { musicPlayer.src = './music/'+lady; musicPlayer.volume = 0.5; musicPlayer.play().catch(()=>{}); }
             }, 500);
         }
 
-        manager.onLoad = () => {
-            if(mapLoadedSuccess) showMenu();
-        };
+        manager.onLoad = () => { if(mapLoadedSuccess) showMenu(); };
 
-        // --- AWARYJNA MAPA (Jeśli GitHub zablokuje model) ---
-        function buildProceduralBackrooms() {
-            document.getElementById('error-log').innerHTML += "<br/>Generowanie mapy zastępczej...";
+        function buildProceduralFallback() {
+            document.getElementById('error-log').innerHTML += "<br/>Generowanie mapy zastępczej (Awaria GitHuba)...";
             const wallMat = new THREE.MeshStandardMaterial({color: 0x887722, roughness: 0.9, side: THREE.DoubleSide});
-            const floorMat = new THREE.MeshStandardMaterial({color: 0x332200, roughness: 0.8});
-            
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), floorMat);
-            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
-            scene.add(floor); mapColliders.push(floor);
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color: 0x332200}));
+            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor); mapColliders.push(floor);
 
-            for(let i=0; i<40; i++) {
-                const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 0.5), wallMat);
-                wall.position.set((Math.random()-0.5)*40, 2, (Math.random()-0.5)*40);
+            for(let i=0; i<50; i++) {
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 0.5), wallMat);
+                wall.position.set((Math.random()-0.5)*40, 2.5, (Math.random()-0.5)*40);
                 wall.rotation.y = Math.random() > 0.5 ? Math.PI/2 : 0;
-                if (wall.position.length() > 5) { // Omijamy srodek
-                    wall.castShadow = true; wall.receiveShadow = true;
-                    scene.add(wall); mapColliders.push(wall);
-                }
+                wall.castShadow = true; wall.receiveShadow = true;
+                scene.add(wall); mapColliders.push(wall);
             }
             camera.position.set(0, 1.5, 0);
             mapLoadedSuccess = true;
             document.getElementById('btn-force-start').classList.remove('hidden');
         }
 
-        // --- ŁADOWANIE MODELU GLTF ---
-        console.log("Rozpoczynam pobieranie modelu: ./models/backrooms/scene.gltf");
-        
-        loader.load('./models/backrooms/scene.gltf', (gltf) => {
-            const map = gltf.scene;
-            
-            // CENTROWANIE I SKALOWANIE MAPY
-            const box = new THREE.Box3().setFromObject(map);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3()).length();
-            
-            // Przesuwamy mapę tak, aby jej środek był na (0,0,0)
-            map.position.x += (map.position.x - center.x);
-            map.position.y += (map.position.y - center.y);
-            map.position.z += (map.position.z - center.z);
-            
-            if (size < 5) map.scale.setScalar(20); // Jeśli miniaturka to powiększ
+        function initMapLoad() {
+            loader.load('./models/backrooms/scene.gltf', (gltf) => {
+                const map = gltf.scene;
+                
+                const box = new THREE.Box3().setFromObject(map);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3()).length();
+                
+                // Centrowanie i Skalowanie
+                map.position.set(-center.x, -center.y, -center.z);
+                if (size < 5) map.scale.setScalar(20);
 
-            map.traverse(n => { 
-                if(n.isMesh) { 
-                    n.receiveShadow = true; n.castShadow = true; 
-                    if(n.material) n.material.side = THREE.DoubleSide; // Wymuszenie podwójnych ścian
-                    mapColliders.push(n); 
-                }
+                map.traverse(n => { 
+                    if(n.isMesh) { 
+                        n.receiveShadow = true; n.castShadow = true; 
+                        if(n.material) n.material.side = THREE.DoubleSide; 
+                        mapColliders.push(n); 
+                    }
+                });
+                scene.add(map);
+                
+                // Szukanie podłogi do bezpiecznego spawnu
+                camera.position.set(0, 10, 0);
+                const spawnRay = new THREE.Raycaster(new THREE.Vector3(0, 20, 0), new THREE.Vector3(0, -1, 0));
+                const hits = spawnRay.intersectObjects(mapColliders);
+                if(hits.length > 0) camera.position.y = hits[0].point.y + 1.6;
+                else camera.position.y = 1.6;
+
+                mapLoadedSuccess = true;
+            }, undefined, (error) => {
+                document.getElementById('error-log').innerText = "Błąd pobierania /models/backrooms/scene.gltf z GitHuba!";
+                buildProceduralFallback();
             });
-            scene.add(map);
-            camera.position.set(0, 1.5, 0);
-            mapLoadedSuccess = true;
-            console.log("Mapa wczytana idealnie!");
-        }, undefined, (error) => {
-            console.error("BŁĄD WGRYWANIA MAPY:", error);
-            document.getElementById('error-log').innerText = "Nie znaleziono pliku ./models/backrooms/scene.gltf! Sprawdź wielkość liter na GitHubie.";
-            buildProceduralBackrooms(); // Ratunek!
-        });
+        }
 
         document.getElementById('btn-force-start').addEventListener('click', showMenu);
 
-        // --- MULTIPLAYER ---
+        // --- MULTIPLAYER & WEBRTC (Voice) ---
         function setupRemote(nick) {
             if(remoteAvatarLoaded) return;
-            // Nick Sprite
             const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
             canvas.width = 256; canvas.height = 64; ctx.fillStyle = "#ffaa00"; ctx.font = "bold 32px Arial"; ctx.textAlign = "center"; ctx.fillText(nick, 128, 45);
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas)})); 
             sprite.position.y = 2.2; sprite.scale.set(3,0.75,1);
             remotePlayerGroup.add(sprite);
 
-            // Awaryjny model gracza (Zawsze zadziała)
-            const playerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.8, 8), new THREE.MeshStandardMaterial({color:0xffaa00, wireframe:true}));
-            playerMesh.position.y = 0.9;
-            remotePlayerGroup.add(playerMesh);
-            scene.add(remotePlayerGroup);
-            remoteAvatarLoaded = true;
+            const fallback = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.8, 8), new THREE.MeshStandardMaterial({color:0xffaa00, wireframe:true}));
+            fallback.position.y = 0.9; remotePlayerGroup.add(fallback);
+            scene.add(remotePlayerGroup); remoteAvatarLoaded = true;
 
-            // Próba wczytania ładnego modelu
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const av = gltf.scene; av.position.y = 0; 
                 av.traverse(n => { if(n.isMesh) { n.castShadow=true; n.receiveShadow=true; }});
-                remotePlayerGroup.remove(playerMesh); 
-                remotePlayerGroup.add(av);
-            }, undefined, (e) => console.log("Brak ładnego avatara, zostaje awaryjny."));
+                remotePlayerGroup.remove(fallback); remotePlayerGroup.add(av);
+            }, undefined, (e) => console.log("Brak modelu avatara."));
+        }
+
+        function setupPeerEvents(peerInstance) {
+            // Odbieranie dzwonienia od kogoś (Voice Chat)
+            peerInstance.on('call', (call) => {
+                call.answer(localMicStream); 
+                call.on('stream', (remoteStream) => {
+                    remotePositionalAudio.setMediaStreamSource(remoteStream);
+                });
+            });
+        }
+
+        function handleData(d) {
+            if(d.type === 'init') { setupRemote(d.nick); if(isHost) conn.send({type:'initReply', nick:myNick}); }
+            if(d.type === 'initReply') { setupRemote(d.nick); }
+            if(d.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(d.x, d.y, d.z); remotePlayerGroup.rotation.y = d.ry; }
+            if(d.type === 'chat') { addChatMessage(d.nick, d.text, "#00ffff"); }
+            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); }
         }
 
         // --- UI ACTIONS ---
-        function start() {
+        document.getElementById('btn-init').addEventListener('click', async () => {
+            document.getElementById('init-screen').style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'flex';
+            await initAudioSystem();
+            initMapLoad();
+            setTimeout(() => { if(!mapLoadedSuccess) manager.onLoad(); }, 3000); // Awaryjne puszczenie menedżera
+        });
+
+        function startGame() {
             isGameRunning = true; 
             document.getElementById('menu').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
+            document.getElementById('chat-container').style.display = 'flex';
             document.getElementById('crosshair').style.display = 'block';
             controls.lock(); 
             if(conn && conn.open) conn.send({type:'init', nick:myNick});
@@ -264,6 +396,7 @@
                 document.getElementById('my-code-display').innerText = id;
                 document.getElementById('btn-start-game').classList.remove('hidden');
                 document.getElementById('btn-create').classList.add('hidden');
+                setupPeerEvents(peer);
             });
             peer.on('connection', c => { conn = c; conn.on('data', handleData); });
         });
@@ -274,13 +407,24 @@
             if(code.length !== 5) return;
             peer = new Peer();
             peer.on('open', () => {
+                setupPeerEvents(peer);
                 conn = peer.connect(code);
-                conn.on('open', () => { conn.on('data', handleData); setTimeout(start, 500); });
+                conn.on('open', () => { 
+                    conn.on('data', handleData); 
+                    // Połączono tekstowo, dzwonimy z głosem!
+                    if (localMicStream) {
+                        const call = peer.call(code, localMicStream);
+                        call.on('stream', (remoteStream) => {
+                            remotePositionalAudio.setMediaStreamSource(remoteStream);
+                        });
+                    }
+                    setTimeout(startGame, 500); 
+                });
             });
         });
 
-        document.getElementById('btn-offline').addEventListener('click', start);
-        document.getElementById('btn-start-game').addEventListener('click', start);
+        document.getElementById('btn-offline').addEventListener('click', startGame);
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
         document.getElementById('btn-resume').addEventListener('click', () => { 
             document.getElementById('menu').style.display = 'none'; 
             controls.lock(); 
@@ -294,19 +438,11 @@
             controls.lock();
         });
 
-        function handleData(d) {
-            if(d.type === 'init') { setupRemote(d.nick); if(peer && peer.id && peer.id.length === 5) conn.send({type:'initReply', nick:myNick}); }
-            if(d.type === 'initReply') { setupRemote(d.nick); }
-            if(d.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(d.x, d.y, d.z); remotePlayerGroup.rotation.y = d.ry; }
-            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); }
-        }
-
-        // --- STEROWANIE ---
+        // --- STEROWANIE & NAPRAWIONY ESC ---
         const controls = new PointerLockControls(camera, document.body);
         
-        // NAPRAWIONY ESC: Idealnie otwiera pauzę
         controls.addEventListener('unlock', () => {
-            if(isGameRunning) {
+            if(isGameRunning && !isChatting) {
                 document.getElementById('menu').style.display = 'flex';
                 document.getElementById('login-ui').classList.add('hidden');
                 document.getElementById('pause-ui').classList.remove('hidden');
@@ -317,19 +453,28 @@
         let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
 
         document.addEventListener('keydown', (e) => {
+            if(isChatting && e.key !== 'Enter') return;
+            
+            if(e.code === 'KeyT' && isGameRunning) {
+                isChatting = true;
+                document.getElementById('chat-input-container').style.display = 'block';
+                document.getElementById('chat-input').focus();
+                controls.unlock();
+                return;
+            }
             if(e.code === 'KeyF') flashlight.visible = !flashlight.visible;
             if(e.code === 'KeyR' && isGameRunning) {
-                // Przycisk ratunkowy
-                camera.position.set(0, 2, 0);
+                camera.position.set(0, 2, 0); // Awaryjny teleport
                 velocity.set(0,0,0);
             }
             switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break; }
         });
+        
         document.addEventListener('keyup', (e) => {
+            if(isChatting) return;
             switch(e.code) { case 'KeyW': moveF = false; break; case 'KeyS': moveB = false; break; case 'KeyA': moveL = false; break; case 'KeyD': moveR = false; break; case 'ShiftLeft': isSprinting = false; break; }
         });
 
-        // Fizyka kolizji Raycast
         const moveRaycaster = new THREE.Raycaster();
         function checkWallCollision(dir) {
             const origin = camera.position.clone(); origin.y -= 0.5; 
@@ -340,7 +485,7 @@
             return (intersects.length > 0 && intersects[0].distance < 0.6);
         }
 
-        // --- PĘTLA ---
+        // --- GŁÓWNA PĘTLA ---
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
@@ -354,34 +499,36 @@
                 const speed = isSprinting ? 20.0 : 10.0;
                 velocity.z -= direction.z * speed * delta;
                 velocity.x -= direction.x * speed * delta;
-                velocity.x *= 0.85; // Tarcie
+                velocity.x *= 0.85; 
                 velocity.z *= 0.85;
 
-                // Bezpieczne przesuwanie (sprawdza ściany)
                 if (velocity.x !== 0 || velocity.z !== 0) {
                     if(!checkWallCollision(new THREE.Vector3(0, 0, Math.sign(velocity.z)))) controls.moveForward(-velocity.z * delta); else velocity.z = 0; 
                     if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) controls.moveRight(-velocity.x * delta); else velocity.x = 0; 
                 }
 
-                // Grawitacja na mapie (żeby nie latać nad podłogą)
+                // Grawitacja na załadowanej mapie
                 const downRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
                 const floorHits = downRay.intersectObjects(mapColliders);
                 if(floorHits.length > 0) {
                     const dist = floorHits[0].distance;
-                    if(dist < 1.4) camera.position.y += (1.5 - dist); // Wchodzenie na schody
-                    else if(dist > 1.6 && dist < 3.0) camera.position.y -= 5 * delta; // Spadanie
+                    if(dist < 1.5) camera.position.y += (1.6 - dist); 
+                    else if(dist > 1.7) camera.position.y -= 5 * delta; 
                 }
 
-                if(conn && conn.open) conn.send({type:'move', x:camera.position.x, y:camera.position.y - 1.5, z:camera.position.z, ry:camera.rotation.y});
+                if(conn && conn.open) {
+                    conn.send({type:'move', x:camera.position.x, y:camera.position.y - 1.6, z:camera.position.z, ry:camera.rotation.y});
+                }
             }
-            renderer.render(scene, camera);
+            
+            composer.render(); // Zamiast renderer.render (Efekty HD)
         }
 
         animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
