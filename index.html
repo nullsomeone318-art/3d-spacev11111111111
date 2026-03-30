@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Multi, Budowanie & Muzyka</title>
+    <title>Epika 3D - Naprawione Bugi & Animacje</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
@@ -34,7 +34,6 @@
             border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px;
         }
 
-        /* Nowy styl specjalnie dla krótkiego kodu */
         #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
 
         button {
@@ -63,7 +62,6 @@
 </head>
 <body>
     <div id="yt-player"></div>
-
     <div id="crosshair"></div>
     <div id="hud">
         <b>LPM</b>: Zbuduj Blok<br>
@@ -151,6 +149,7 @@
         let remotePlayerGroup = new THREE.Group();
         let remotePlayerNickSprite = null;
         let remoteAvatarLoaded = false;
+        let remoteMixer = null; // NOWOŚĆ: Mikser animacji dla drugiego gracza
         
         const uiMenu = document.getElementById('menu');
         const uiHud = document.getElementById('hud');
@@ -158,7 +157,6 @@
         const uiCrosshair = document.getElementById('crosshair');
         const statusMsg = document.getElementById('status-msg');
 
-        // --- NOWOŚĆ: GENERATOR KRÓTKIEGO KODU ---
         function generateShortCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let result = '';
@@ -251,8 +249,16 @@
                 avatar.scale.set(1, 1, 1);
                 avatar.position.y = -1;
                 avatar.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+                
                 remotePlayerGroup.add(avatar);
                 remoteAvatarLoaded = true;
+
+                // NOWOŚĆ: System odtwarzania animacji z pliku GLTF
+                if (gltf.animations && gltf.animations.length > 0) {
+                    remoteMixer = new THREE.AnimationMixer(avatar);
+                    const action = remoteMixer.clipAction(gltf.animations[0]); // Odpala pierwszą animację (np. Idle)
+                    action.play();
+                }
             });
         }
 
@@ -287,24 +293,20 @@
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick, blocks: builtBlocksNetwork });
         }
 
-        // --- Logika Tworzenia Serwera (Krótki Kod) ---
         document.getElementById('btn-create').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Host";
-            
-            // Generujemy nasz własny, krótki 5-znakowy kod!
             const shortCode = generateShortCode(); 
-            peer = new Peer(shortCode); // Wymuszamy na PeerJS użycie naszego kodu
+            peer = new Peer(shortCode); 
             
             statusMsg.innerText = "Trwa generowanie serwera...";
             peer.on('open', (id) => {
                 document.getElementById('btn-create').classList.add('hidden');
                 document.getElementById('code-container').classList.remove('hidden');
-                document.getElementById('my-code-display').innerText = id; // Pokaże np. X9K2A
+                document.getElementById('my-code-display').innerText = id;
                 statusMsg.innerText = "Oczekiwanie na gracza...";
                 isHost = true;
             });
             
-            // Zabezpieczenie na wypadek gdyby 5-znakowy kod był wyjątkowo zajęty w danej sekundzie na świecie
             peer.on('error', (err) => {
                 if (err.type === 'unavailable-id') {
                     statusMsg.innerText = "Błąd: Kod zajęty. Kliknij 'Generuj' jeszcze raz.";
@@ -321,15 +323,10 @@
             });
         });
 
-        // --- Logika Dołączania ---
         document.getElementById('btn-join').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Klient";
-            // Zmieniamy wpisany kod na duże litery dla pewności
             const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-            if(code.length !== 5) {
-                statusMsg.innerText = "Kod musi mieć dokładnie 5 znaków!";
-                return;
-            }
+            if(code.length !== 5) { statusMsg.innerText = "Kod musi mieć dokładnie 5 znaków!"; return; }
             
             peer = new Peer();
             statusMsg.innerText = "Łączenie z serwerem...";
@@ -362,7 +359,7 @@
             }
         });
 
-        // --- BUDOWANIE (RAYCASTER) ---
+        // --- BUDOWANIE (RAYCASTER) I NAPRAWA BUGÓW ---
         const raycaster = new THREE.Raycaster();
         const blockGeo = new THREE.BoxGeometry(2, 2, 2);
         const blockMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
@@ -388,7 +385,22 @@
             if (intersects.length > 0) {
                 const intersect = intersects[0];
                 const pos = intersect.point.clone().add(intersect.face.normal.clone().multiplyScalar(1));
-                pos.x = Math.floor(pos.x / 2) * 2 + 1; pos.y = Math.floor(pos.y / 2) * 2 + 1; pos.z = Math.floor(pos.z / 2) * 2 + 1;
+                pos.x = Math.floor(pos.x / 2) * 2 + 1; 
+                pos.y = Math.floor(pos.y / 2) * 2 + 1; 
+                pos.z = Math.floor(pos.z / 2) * 2 + 1;
+
+                // NOWOŚĆ: Blokada zatrzaskiwania w blokach
+                const newBlockBox = new THREE.Box3().setFromCenterAndSize(pos, new THREE.Vector3(2, 2, 2));
+                const myPlayerBox = new THREE.Box3().setFromCenterAndSize(
+                    new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y - 1, controls.getObject().position.z),
+                    new THREE.Vector3(1.1, 2.1, 1.1) // Delikatnie większy box na wypadek milimetrowych pomyłek
+                );
+
+                if (newBlockBox.intersectsBox(myPlayerBox)) {
+                    console.log("Nie możesz postawić bloku w sobie!");
+                    return; // Przerywamy budowanie w tym miejscu
+                }
+
                 placeBlock(pos, true);
             }
         });
@@ -435,6 +447,11 @@
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
+
+            // NOWOŚĆ: Aktualizacja miksera animacji drugiego gracza
+            if (remoteMixer) {
+                remoteMixer.update(delta);
+            }
 
             if (controls.isLocked) {
                 direction.z = Number(moveF) - Number(moveB); direction.x = Number(moveR) - Number(moveL);
