@@ -34,6 +34,9 @@
             border: 1px solid #00ffff; color: white; text-align: center; width: 85%; border-radius: 5px;
         }
 
+        /* Nowy styl specjalnie dla krótkiego kodu */
+        #join-code-input { text-transform: uppercase; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
+
         button {
             padding: 10px 20px; font-size: 14px; background: transparent; color: #00ffff;
             border: 2px solid #00ffff; border-radius: 5px; cursor: pointer;
@@ -41,7 +44,7 @@
         }
         button:hover { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
 
-        #my-code-display { font-size: 20px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 10px; border-radius: 5px;}
+        #my-code-display { font-size: 32px; color: #ff00ff; font-weight: bold; margin: 10px 0; user-select: text; background: #222; padding: 15px; border-radius: 5px; letter-spacing: 4px;}
         .hidden { display: none !important; }
         
         #hud {
@@ -49,13 +52,11 @@
             background: rgba(0,0,0,0.5); padding: 10px; border-left: 3px solid #00ffff; z-index: 100; pointer-events: none; display: none;
         }
 
-        /* Styl dla odtwarzacza na dole */
         #music-status {
             position: absolute; top: 20px; right: 20px; color: #ff00ff; font-weight: bold;
             background: rgba(0,0,0,0.5); padding: 10px; border-right: 3px solid #ff00ff; z-index: 100; display: none;
         }
         
-        /* Ukrywamy ramkę wideo YT, chcemy tylko muzykę */
         #yt-player { position: absolute; top: -9999px; left: -9999px; } 
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -80,7 +81,7 @@
         <div class="panels-container">
             <div class="panel" id="host-panel">
                 <h3>STWÓRZ MAPĘ</h3>
-                <button id="btn-create">Generuj Kod Serwera</button>
+                <button id="btn-create">Generuj Krótki Kod</button>
                 <div id="code-container" class="hidden">
                     <p style="font-size: 12px; color: #aaa;">Podaj ten kod znajomemu:</p>
                     <div id="my-code-display"></div>
@@ -90,7 +91,7 @@
 
             <div class="panel" id="join-panel">
                 <h3>DOŁĄCZ DO GRY</h3>
-                <input type="text" id="join-code-input" placeholder="Wklej kod serwera"><br>
+                <input type="text" id="join-code-input" placeholder="Wpisz 5-znakowy kod" maxlength="5"><br>
                 <button id="btn-join">Dołącz i Graj</button>
             </div>
 
@@ -118,11 +119,10 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        // --- 0. YOUTUBE API SETUP ---
+        // --- YOUTUBE API ---
         let ytPlayer;
         let isYtReady = false;
 
-        // Ładowanie API YouTube IFrame
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -130,21 +130,19 @@
 
         window.onYouTubeIframeAPIReady = function() {
             ytPlayer = new YT.Player('yt-player', {
-                height: '10', width: '10', // Praktycznie niewidoczne
-                videoId: '',
+                height: '10', width: '10', videoId: '',
                 playerVars: { 'autoplay': 1, 'controls': 0 },
                 events: { 'onReady': () => { isYtReady = true; } }
             });
         };
 
-        // Funkcja wyciągająca ID filmu z linku (obsługuje różne formaty YT)
         function getYouTubeID(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // --- 1. ZMIENNE GLOBALNE I SIECIOWE ---
+        // --- ZMIENNE GLOBALNE I SIECIOWE ---
         let peer = null;
         let conn = null;
         let myNick = "Gracz";
@@ -160,7 +158,17 @@
         const uiCrosshair = document.getElementById('crosshair');
         const statusMsg = document.getElementById('status-msg');
 
-        // --- 2. SCENA 3D ---
+        // --- NOWOŚĆ: GENERATOR KRÓTKIEGO KODU ---
+        function generateShortCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 5; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // --- SCENA 3D ---
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x050510, 0.03);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -177,7 +185,7 @@
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 3. ŚRODOWISKO I KOLIZJE ---
+        // --- ŚRODOWISKO I KOLIZJE ---
         const collidableObjects = [];
         const buildableSurfaces = [];
 
@@ -213,7 +221,7 @@
             }
         }
 
-        // --- 4. SYSTEM MULTIPLAYER ---
+        // --- SYSTEM MULTIPLAYER ---
         function createTextSprite(message) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -248,7 +256,6 @@
             });
         }
 
-        // Odbieranie danych z sieci
         function handleNetworkData(data) {
             if(data.type === 'init') {
                 setupRemotePlayer(data.nick);
@@ -263,7 +270,6 @@
             if(data.type === 'build') {
                 placeBlock(new THREE.Vector3(data.x, data.y, data.z), false);
             }
-            // NOWOŚĆ: Synchronizacja Muzyki
             if(data.type === 'music') {
                 if(isYtReady && ytPlayer.loadVideoById) {
                     ytPlayer.loadVideoById(data.videoId);
@@ -281,18 +287,33 @@
             if(conn && conn.open) conn.send({ type: 'init', nick: myNick, blocks: builtBlocksNetwork });
         }
 
-        // --- Logika UI (Przyciski) ---
+        // --- Logika Tworzenia Serwera (Krótki Kod) ---
         document.getElementById('btn-create').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Host";
-            peer = new Peer();
+            
+            // Generujemy nasz własny, krótki 5-znakowy kod!
+            const shortCode = generateShortCode(); 
+            peer = new Peer(shortCode); // Wymuszamy na PeerJS użycie naszego kodu
+            
             statusMsg.innerText = "Trwa generowanie serwera...";
             peer.on('open', (id) => {
                 document.getElementById('btn-create').classList.add('hidden');
                 document.getElementById('code-container').classList.remove('hidden');
-                document.getElementById('my-code-display').innerText = id;
+                document.getElementById('my-code-display').innerText = id; // Pokaże np. X9K2A
                 statusMsg.innerText = "Oczekiwanie na gracza...";
                 isHost = true;
             });
+            
+            // Zabezpieczenie na wypadek gdyby 5-znakowy kod był wyjątkowo zajęty w danej sekundzie na świecie
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    statusMsg.innerText = "Błąd: Kod zajęty. Kliknij 'Generuj' jeszcze raz.";
+                    peer.destroy();
+                } else {
+                    statusMsg.innerText = "Wystąpił błąd sieci.";
+                }
+            });
+
             peer.on('connection', (connection) => {
                 conn = connection;
                 statusMsg.innerText = "Gracz połączony! Możesz zacząć grę.";
@@ -300,10 +321,16 @@
             });
         });
 
+        // --- Logika Dołączania ---
         document.getElementById('btn-join').addEventListener('click', () => {
             myNick = document.getElementById('my-nick').value || "Klient";
-            const code = document.getElementById('join-code-input').value.trim();
-            if(!code) return;
+            // Zmieniamy wpisany kod na duże litery dla pewności
+            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if(code.length !== 5) {
+                statusMsg.innerText = "Kod musi mieć dokładnie 5 znaków!";
+                return;
+            }
+            
             peer = new Peer();
             statusMsg.innerText = "Łączenie z serwerem...";
             peer.on('open', () => {
@@ -313,35 +340,29 @@
                     conn.on('data', handleNetworkData);
                     setTimeout(startGame, 1000);
                 });
+                conn.on('error', (err) => { statusMsg.innerText = "Błąd połączenia! Zły kod?"; });
             });
         });
 
         document.getElementById('btn-start-host').addEventListener('click', startGame);
 
-        // NOWOŚĆ: Logika DJ-a
         document.getElementById('btn-play-music').addEventListener('click', () => {
             const url = document.getElementById('yt-url-input').value;
             const videoId = getYouTubeID(url);
             
             if(videoId) {
-                // Odpal u siebie
                 if(isYtReady && ytPlayer.loadVideoById) {
                     ytPlayer.loadVideoById(videoId);
                     uiMusicStatus.innerText = "Muzyka: Twój wybór!";
                 }
-                // Wyślij do drugiego gracza
-                if(conn && conn.open) {
-                    conn.send({ type: 'music', videoId: videoId });
-                }
-                
-                // Wróć do gry (zablokuj kursor)
+                if(conn && conn.open) conn.send({ type: 'music', videoId: videoId });
                 if(scene.children.length > 0) controls.lock(); 
             } else {
                 alert("Nieprawidłowy link YouTube! Wklej poprawny adres URL.");
             }
         });
 
-        // --- 5. BUDOWANIE (RAYCASTER) ---
+        // --- BUDOWANIE (RAYCASTER) ---
         const raycaster = new THREE.Raycaster();
         const blockGeo = new THREE.BoxGeometry(2, 2, 2);
         const blockMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
@@ -372,7 +393,7 @@
             }
         });
 
-        // --- 6. STEROWANIE ---
+        // --- STEROWANIE ---
         const controls = new PointerLockControls(camera, document.body);
         controls.addEventListener('unlock', () => {
             uiMenu.style.display = 'flex'; uiHud.style.display = 'none'; uiCrosshair.style.display = 'none';
@@ -409,7 +430,7 @@
             return false;
         }
 
-        // --- 7. PĘTLA GRY ---
+        // --- PĘTLA GRY ---
         let lastSendTime = 0;
         function animate() {
             requestAnimationFrame(animate);
