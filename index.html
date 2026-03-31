@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPACE 3D V1 - Multiplayer</title>
+    <title>SPACE 3D V1.1 - Ultimate Engine</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
@@ -42,8 +42,8 @@
     <audio id="local-music-player" loop crossorigin="anonymous"></audio>
 
     <div id="init-screen">
-        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 10px;">SPACE 3D V1</h1>
-        <p style="color: #aaa; max-width: 600px;">Zezwól na dostęp do mikrofonu, aby korzystać z komunikacji ze znajomymi.</p>
+        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 10px;">SPACE 3D V1.1</h1>
+        <p style="color: #aaa; max-width: 600px;">Zezwól na dostęp do mikrofonu, aby korzystać z Proximity Voice Chat ze znajomymi w grze.</p>
         <button id="btn-init">URUCHOM SYSTEM</button>
     </div>
 
@@ -52,7 +52,6 @@
         <p id="load-status">Pobieranie plików .gltf z serwera...</p>
         <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
         <p id="error-log"></p>
-        <button id="btn-force-start" class="hidden" style="width: 200px; margin-top: 30px; border-color: #ff3333; color: #ff3333;">WYMUŚ START</button>
     </div>
 
     <div id="crosshair"></div>
@@ -68,12 +67,12 @@
         <b>[T]</b>: Czat / Komendy<br>
         <b>[F]</b>: Latarka<br>
         <b>[R]</b>: Reset Pozycji<br>
-        <b>[ESC]</b>: Pauza<br>
+        <b>[ESC]</b>: Menu / Pauza<br>
         <b>WSAD</b>: Ruch | <b>Shift</b>: Sprint
     </div>
 
     <div id="menu">
-        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 20px;">SPACE 3D V1</h1>
+        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 20px;">SPACE 3D</h1>
         
         <div id="login-ui">
             <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Astronauta">
@@ -132,7 +131,7 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
         // =======================================================
-        // TWOJA MUZYKA (Z folderu /music/ na GitHubie)
+        // BAZA AUDIO (Wpisz tu nazwy swoich plików .mp3)
         // =======================================================
         const myMusicFiles = [
             "lady_gaga.mp3", 
@@ -145,10 +144,12 @@
         // --- ZMIENNE GLOBALNE ---
         let peer = null, conn = null, myNick = "Astronauta", isGameRunning = false, isChatting = false;
         let remotePlayerGroup = new THREE.Group(), remoteAvatarLoaded = false;
-        let currentMapMesh = null;
-        const mapColliders = [];
+        
+        let currentMapMesh = null; // Trzyma wgrany model z folderu
+        let proceduralMapGroup = new THREE.Group(); // Trzyma wygenerowany świat
+        const mapColliders = []; // Fizyka
 
-        // --- RENDERER HD ---
+        // --- RENDERER HD & RTX ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020202);
         scene.fog = new THREE.FogExp2(0x020202, 0.02);
@@ -166,7 +167,7 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2)); 
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2)); // Limit dla płynności
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace; 
@@ -228,31 +229,36 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function handleCommand(cmdString) {
+        function handleCommand(cmdString, sendToNetwork = true) {
             const args = cmdString.split(' ');
             const cmd = args[0].toLowerCase();
             
             if (cmd === '/cmd' || cmd === '/help') {
                 addChatMessage("SYSTEM", "Dostępne komendy:", "#ffff00");
-                addChatMessage("SYSTEM", "- /map [nazwa] -> zmienia mapę dla wszystkich", "#ffff00");
-                addChatMessage("SYSTEM", "- /tp -> teleport na środek (ratunek)", "#ffff00");
-                addChatMessage("SYSTEM", "- /ping -> test połączenia", "#ffff00");
+                addChatMessage("SYSTEM", "- /map [nazwa] -> zmienia wgraną mapę", "#ffff00");
+                addChatMessage("SYSTEM", "- /gen -> generuje nowy proceduralny świat", "#ffff00");
+                addChatMessage("SYSTEM", "- /tp -> teleport do bezpiecznej strefy", "#ffff00");
+                addChatMessage("SYSTEM", "- /ping -> test silnika", "#ffff00");
             } 
             else if (cmd === '/map') {
                 if (args[1]) {
-                    addChatMessage("SYSTEM", "Zmieniam mapę na: " + args[1], "#00ff00");
-                    loadMap(args[1], true); // true = wyślij info do innych
+                    addChatMessage("SYSTEM", "Wczytywanie sektora: " + args[1], "#00ff00");
+                    loadMap(args[1], sendToNetwork); 
                 } else {
                     addChatMessage("SYSTEM", "Błąd! Użycie: /map [nazwa_folderu]", "#ff3333");
                 }
             } 
+            else if (cmd === '/gen') {
+                generateProceduralWorld(sendToNetwork);
+                addChatMessage("SYSTEM", "Proceduralna Generacja Zakończona.", "#00ff00");
+            }
             else if (cmd === '/tp') {
                 camera.position.set(0, 1.7, 0);
                 velocity.set(0,0,0);
-                addChatMessage("SYSTEM", "Teleportowano na środek.", "#00ff00");
+                addChatMessage("SYSTEM", "Teleportowano.", "#00ff00");
             }
             else if (cmd === '/ping') {
-                addChatMessage("SYSTEM", "PONG! Silnik Space3dV1 działa.", "#ffaa00");
+                addChatMessage("SYSTEM", "PONG! SPACE 3D V1.1 działa.", "#ffaa00");
             }
             else {
                 addChatMessage("SYSTEM", "Nieznana komenda. Wpisz /cmd", "#ff3333");
@@ -264,7 +270,7 @@
                 const txt = chatInput.value.trim();
                 if (txt !== '') { 
                     if (txt.startsWith('/')) {
-                        handleCommand(txt);
+                        handleCommand(txt, true); // Wykonaj i wyślij jeśli potrzeba
                     } else {
                         addChatMessage(myNick, txt, "#00ff00"); 
                         if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); 
@@ -277,10 +283,9 @@
             }
         });
 
-        // --- SYSTEM ŁADOWANIA MAPY ---
+        // --- SYSTEM ZARZĄDZANIA MAPAMI ---
         const manager = new THREE.LoadingManager();
         const loader = new GLTFLoader(manager);
-        let mapLoadedSuccess = false;
         
         manager.onProgress = (url, loaded, total) => {
             let p = (loaded/total)*100;
@@ -294,21 +299,56 @@
                 if (!isGameRunning) document.getElementById('menu').style.display = 'flex';
                 
                 let lady = myMusicFiles.find(f => f.toLowerCase().includes('lady'));
-                if(lady) { musicPlayer.src = './music/'+lady; musicPlayer.volume = 0.5; musicPlayer.play().catch(()=>{}); }
+                if(lady && !isGameRunning) { musicPlayer.src = './music/'+lady; musicPlayer.volume = 0.5; musicPlayer.play().catch(()=>{}); }
             }, 500);
         }
 
-        manager.onLoad = () => { if(mapLoadedSuccess) showMenu(); };
+        manager.onLoad = () => { showMenu(); };
 
+        // 1. CZYSZCZENIE SCENY
+        function clearWorld() {
+            if (currentMapMesh) { scene.remove(currentMapMesh); currentMapMesh = null; }
+            if (proceduralMapGroup) { scene.remove(proceduralMapGroup); proceduralMapGroup.clear(); }
+            mapColliders.length = 0; // Usuń stare fizyki
+        }
+
+        // 2. GENERATOR PROCEDURALNY (/gen)
+        function generateProceduralWorld(sendToNetwork = false) {
+            clearWorld();
+            
+            const wallMat = new THREE.MeshStandardMaterial({color: 0x444455, roughness: 0.8, side: THREE.DoubleSide});
+            const floorMat = new THREE.MeshStandardMaterial({color: 0x111115, roughness: 0.2, metalness: 0.5}); // Odbijająca podłoga
+            
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), floorMat);
+            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; 
+            proceduralMapGroup.add(floor); mapColliders.push(floor);
+
+            // Losowy labirynt
+            for(let i=0; i<100; i++) {
+                const isTall = Math.random() > 0.8;
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(10, isTall ? 8 : 4, 1), wallMat);
+                wall.position.set((Math.random()-0.5)*150, isTall ? 4 : 2, (Math.random()-0.5)*150);
+                wall.rotation.y = Math.random() > 0.5 ? Math.PI/2 : 0;
+                
+                if (wall.position.length() > 8) { // Omijaj środek (spawn)
+                    wall.castShadow = true; wall.receiveShadow = true;
+                    proceduralMapGroup.add(wall); mapColliders.push(wall);
+                }
+            }
+            scene.add(proceduralMapGroup);
+            camera.position.set(0, 1.7, 0); // Bezpieczny spawn
+            
+            if (sendToNetwork && conn && conn.open) conn.send({ type: 'commandGen' });
+            if (!isGameRunning) showMenu();
+        }
+
+        // 3. ŁADOWANIE PLIKU GLTF (/map)
         function loadMap(mapName, sendToNetwork = false) {
             document.getElementById('loading-screen').style.display = 'flex';
             document.getElementById('loading-screen').style.opacity = '1';
-            document.getElementById('load-status').innerText = `Ładowanie obszaru: ${mapName}...`;
+            document.getElementById('load-status').innerText = `Pobieranie wektorów: ${mapName}...`;
 
-            if (currentMapMesh) {
-                scene.remove(currentMapMesh);
-                mapColliders.length = 0;
-            }
+            clearWorld();
 
             loader.load(`./models/${mapName}/scene.gltf`, (gltf) => {
                 currentMapMesh = gltf.scene;
@@ -329,79 +369,55 @@
                 });
                 scene.add(currentMapMesh);
                 
+                // Safe Spawn
                 camera.position.set(0, 10, 0);
                 const spawnRay = new THREE.Raycaster(new THREE.Vector3(0, 20, 0), new THREE.Vector3(0, -1, 0));
                 const hits = spawnRay.intersectObjects(mapColliders);
-                if(hits.length > 0) camera.position.y = hits[0].point.y + 1.6;
-                else camera.position.y = 1.6;
-
-                mapLoadedSuccess = true;
+                if(hits.length > 0) camera.position.y = hits[0].point.y + 1.7;
+                else camera.position.y = 1.7;
 
                 if (sendToNetwork && conn && conn.open) {
                     conn.send({ type: 'commandMap', mapName: mapName });
                 }
             }, undefined, (error) => {
-                addChatMessage("SYSTEM", `BŁĄD: Nie znaleziono mapy ./models/${mapName}/scene.gltf`, "#ff3333");
-                document.getElementById('loading-screen').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
+                addChatMessage("SYSTEM", `Błąd! Nie wczytano: ${mapName}. Odpalam generator awaryjny...`, "#ff3333");
+                generateProceduralWorld(sendToNetwork);
             });
         }
 
-        document.getElementById('btn-force-start').addEventListener('click', showMenu);
-
-        // --- KULOODPORNY SYSTEM AVATARA ---
+        // --- AVATAR ---
         function setupRemote(nick) {
             if(remoteAvatarLoaded) return;
-            
-            // 1. Nick nad głową
             const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
             canvas.width = 256; canvas.height = 64; ctx.fillStyle = "#00ffff"; ctx.font = "bold 32px Arial"; ctx.textAlign = "center"; ctx.fillText(nick, 128, 45);
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas)})); 
             sprite.position.y = 2.2; sprite.scale.set(3,0.75,1);
             remotePlayerGroup.add(sprite);
 
-            // 2. Awaryjny słupek
             const fallback = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.8, 8), new THREE.MeshStandardMaterial({color:0x00ffff, wireframe:true}));
             fallback.position.y = 0.9; 
             remotePlayerGroup.add(fallback);
             scene.add(remotePlayerGroup); 
             remoteAvatarLoaded = true;
 
-            // 3. Ładowanie prawdziewego Avatara z auto-centrowaniem i skalowaniem
-            console.log("Próba ładowania Avatara...");
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const av = gltf.scene; 
-                
-                // Mierzymy Avatara, żeby upewnić się, że nie jest gigantem ani mrówką
                 const box = new THREE.Box3().setFromObject(av);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
                 
-                // Centrujemy model tak, aby stał idealnie stopami na 0
                 av.position.set(-center.x, -box.min.y, -center.z);
-                
-                // Obliczamy skalę tak, aby wysokość modelu (Y) wynosiła równo 1.8 metra
-                if (size.y > 0) {
-                    const targetHeight = 1.8;
-                    const scaleFactor = targetHeight / size.y;
-                    av.scale.setScalar(scaleFactor);
-                }
+                if (size.y > 0) av.scale.setScalar(1.8 / size.y);
 
                 av.traverse(n => { if(n.isMesh) { n.castShadow=true; n.receiveShadow=true; }});
-                
-                // Wrzucamy poprawionego Avatara do "Pudełka" (Wrapper), żeby łatwo nim obracać
-                const wrapper = new THREE.Group();
-                wrapper.add(av);
-
-                remotePlayerGroup.remove(fallback); 
-                remotePlayerGroup.add(wrapper);
-                console.log("Avatar załadowany i przeskalowany!");
-            }, undefined, (error) => {
-                console.error("Błąd Avatara:", error);
-                addChatMessage("SYSTEM", "Brak pliku ./models/avatar/scene.gltf! Pozostawiono model awaryjny.", "#ff3333");
+                const wrapper = new THREE.Group(); wrapper.add(av);
+                remotePlayerGroup.remove(fallback); remotePlayerGroup.add(wrapper);
+            }, undefined, (e) => {
+                console.log("Avatar zastępczy aktywny.");
             });
         }
 
+        // --- OBSŁUGA SIECI ---
         function setupPeerEvents(peerInstance) {
             peerInstance.on('call', (call) => {
                 call.answer(localMicStream); 
@@ -414,8 +430,10 @@
             if(d.type === 'initReply') { setupRemote(d.nick); }
             if(d.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(d.x, d.y, d.z); remotePlayerGroup.rotation.y = d.ry; }
             if(d.type === 'chat') { addChatMessage(d.nick, d.text, "#00ffff"); }
-            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); addChatMessage("RADIO", "Odtwarzam: " + d.file, "#ff00ff");}
-            if(d.type === 'commandMap') { loadMap(d.mapName, false); addChatMessage("SYSTEM", "Host zmienił mapę na: " + d.mapName, "#ffff00");}
+            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); addChatMessage("RADIO", "Gram: " + d.file, "#ff00ff");}
+            // Odbieranie komend od znajomego:
+            if(d.type === 'commandMap') { loadMap(d.mapName, false); addChatMessage("SYSTEM", "Zmiana mapy (Host): " + d.mapName, "#ffff00");}
+            if(d.type === 'commandGen') { generateProceduralWorld(false); addChatMessage("SYSTEM", "Sektor wygenerowany na nowo.", "#ffff00");}
         }
 
         // --- UI ACTIONS ---
@@ -423,7 +441,7 @@
             document.getElementById('init-screen').style.display = 'none';
             document.getElementById('loading-screen').style.display = 'flex';
             await initAudioSystem();
-            loadMap('backrooms', false); // Startowa mapa to backrooms
+            loadMap('backrooms', false); 
             setTimeout(() => { if(!mapLoadedSuccess) manager.onLoad(); }, 3000); 
         });
 
@@ -471,18 +489,14 @@
 
         document.getElementById('btn-offline').addEventListener('click', startGame);
         document.getElementById('btn-start-game').addEventListener('click', startGame);
-        document.getElementById('btn-resume').addEventListener('click', () => { 
-            document.getElementById('menu').style.display = 'none'; 
-            controls.lock(); 
-        });
+        document.getElementById('btn-resume').addEventListener('click', () => { document.getElementById('menu').style.display = 'none'; controls.lock(); });
 
         document.getElementById('btn-play-music').addEventListener('click', () => {
             const f = musicSelect.value; if(!f) return;
             musicPlayer.src = './music/'+f; musicPlayer.play();
-            addChatMessage("RADIO", "Włączyłeś piosenkę: " + f, "#ff00ff");
+            addChatMessage("RADIO", "Włączyłeś audio: " + f, "#ff00ff");
             if(conn && conn.open) conn.send({type:'music', file:f});
-            document.getElementById('menu').style.display = 'none'; 
-            controls.lock();
+            document.getElementById('menu').style.display = 'none'; controls.lock();
         });
 
         // --- STEROWANIE I FIZYKA ---
@@ -510,9 +524,8 @@
                 return;
             }
             if(e.code === 'KeyF') flashlight.visible = !flashlight.visible;
-            if(e.code === 'KeyR' && isGameRunning) {
-                handleCommand('/tp'); // Użycie nowej komendy
-            }
+            if(e.code === 'KeyR' && isGameRunning) handleCommand('/tp'); 
+            
             switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break; }
         });
         
@@ -528,7 +541,7 @@
             const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize();
             moveRaycaster.set(origin, moveDirection);
             const intersects = moveRaycaster.intersectObjects(mapColliders, false);
-            return (intersects.length > 0 && intersects[0].distance < 0.4);
+            return (intersects.length > 0 && intersects[0].distance < 0.5);
         }
 
         // --- GŁÓWNA PĘTLA ---
@@ -564,10 +577,9 @@
                     }
                 }
 
-                // Auto-Respawn
-                if (camera.position.y < -10) {
-                    camera.position.set(0, 1.7, 0);
-                    velocity.set(0,0,0);
+                // Auto-Respawn przy upadku w nicość
+                if (camera.position.y < -20) {
+                    handleCommand('/tp');
                 }
 
                 if(conn && conn.open) {
