@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epika 3D - Filtrowanie Anizotropowe & Skala</title>
+    <title>SPACE 3D V1 - Multiplayer</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
         
-        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ffaa00; text-align: center; }
-        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #ffaa00; border: 2px solid #ffaa00; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; margin-top: 20px;}
-        #btn-init:hover { background: #ffaa00; color: #000; box-shadow: 0 0 30px #ffaa00; }
+        #init-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; text-align: center; }
+        #btn-init { padding: 20px 40px; font-size: 24px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; margin-top: 20px;}
+        #btn-init:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px #00ffff; }
         
-        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #ffaa00; transition: opacity 0.5s ease; }
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #00ffff; transition: opacity 0.5s ease; }
         #loading-bar-wrap { width: 300px; height: 6px; background: #222; margin-top: 20px; border-radius: 3px; overflow: hidden;}
-        #loading-bar { width: 0%; height: 100%; background: #ffaa00; box-shadow: 0 0 15px #ffaa00; transition: width 0.2s; }
+        #loading-bar { width: 0%; height: 100%; background: #00ffff; box-shadow: 0 0 15px #00ffff; transition: width 0.2s; }
         #error-log { color: #ff3333; margin-top: 15px; font-family: monospace; max-width: 80%; text-align: center; }
 
         #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; box-shadow: 0 0 10px #ffffff; }
-        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 15px; border-right: 4px solid #ffaa00; z-index: 100; pointer-events: none; display: none; font-family: monospace; font-size: 14px; line-height: 1.6; text-align: right;}
+        #hud { position: absolute; bottom: 20px; right: 20px; color: #ccc; background: rgba(0,0,0,0.8); padding: 15px; border-right: 4px solid #00ffff; z-index: 100; pointer-events: none; display: none; font-family: monospace; font-size: 14px; line-height: 1.6; text-align: right;}
         
-        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); color: #ffaa00; z-index: 200; }
-        .panel { background: rgba(20,20,10,0.9); padding: 20px; border: 1px solid #ffaa00; border-radius: 10px; text-align: center; margin: 10px; width: 300px; }
-        input, select { padding: 10px; margin: 10px 0; background: #111; border: 1px solid #ffaa00; color: white; width: 80%; border-radius: 5px; text-align: center; font-weight: bold;}
-        button { padding: 12px 20px; background: transparent; color: #ffaa00; border: 2px solid #ffaa00; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s;}
-        button:hover { background: #ffaa00; color: #000; }
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); color: #00ffff; z-index: 200; }
+        .panel { background: rgba(20,20,20,0.9); padding: 20px; border: 1px solid #00ffff; border-radius: 10px; text-align: center; margin: 10px; width: 300px; }
+        input, select { padding: 10px; margin: 10px 0; background: #111; border: 1px solid #00ffff; color: white; width: 80%; border-radius: 5px; text-align: center; font-weight: bold;}
+        button { padding: 12px 20px; background: transparent; color: #00ffff; border: 2px solid #00ffff; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s;}
+        button:hover { background: #00ffff; color: #000; }
 
-        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 350px; height: 250px; display: none; flex-direction: column; z-index: 150; }
-        #chat-messages { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 5px; padding: 10px; overflow-y: auto; color: white; font-family: sans-serif; font-size: 14px; margin-bottom: 5px; display: flex; flex-direction: column; justify-content: flex-end;}
+        #chat-container { position: absolute; bottom: 20px; left: 20px; width: 400px; height: 250px; display: none; flex-direction: column; z-index: 150; }
+        #chat-messages { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 5px; padding: 10px; overflow-y: auto; color: white; font-family: sans-serif; font-size: 14px; margin-bottom: 5px; display: flex; flex-direction: column; justify-content: flex-end; text-shadow: 1px 1px 2px black;}
         #chat-input-container { display: none; }
-        #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #ffaa00; color: white; border-radius: 5px; pointer-events: auto;}
-        .msg-line { margin-bottom: 5px; text-shadow: 1px 1px 2px black;}
-        .msg-nick { font-weight: bold; color: #ffaa00; }
+        #chat-input { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(0,0,0,0.8); border: 1px solid #00ffff; color: white; border-radius: 5px; pointer-events: auto;}
+        .msg-line { margin-bottom: 5px; word-wrap: break-word;}
+        .msg-nick { font-weight: bold; color: #00ffff; }
         
         .hidden { display: none !important; }
-        .vhs { text-shadow: 2px 0 red, -2px 0 blue; letter-spacing: 5px; }
+        .neon-text { text-shadow: 0 0 15px #00ffff; letter-spacing: 5px; }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
@@ -42,14 +42,14 @@
     <audio id="local-music-player" loop crossorigin="anonymous"></audio>
 
     <div id="init-screen">
-        <h1 class="vhs" style="font-size: 4em; margin-bottom: 10px;">BACKROOMS HD</h1>
-        <p style="color: #aaa; max-width: 600px;">Zezwól na dostęp do mikrofonu, aby korzystać z Proximity Voice Chat ze znajomymi w labiryncie.</p>
-        <button id="btn-init">ZAINICJUJ SYSTEM</button>
+        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 10px;">SPACE 3D V1</h1>
+        <p style="color: #aaa; max-width: 600px;">Zezwól na dostęp do mikrofonu, aby korzystać z komunikacji ze znajomymi.</p>
+        <button id="btn-init">URUCHOM SYSTEM</button>
     </div>
 
     <div id="loading-screen">
-        <h1 class="vhs" style="font-size: 3em; margin-bottom: 5px;">ŁADOWANIE MAPY</h1>
-        <p id="load-status">Wyostrzanie tekstur (Filtrowanie Anizotropowe)...</p>
+        <h1 class="neon-text" style="font-size: 3em; margin-bottom: 5px;">ŁADOWANIE DANYCH</h1>
+        <p id="load-status">Pobieranie plików .gltf z serwera...</p>
         <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
         <p id="error-log"></p>
         <button id="btn-force-start" class="hidden" style="width: 200px; margin-top: 30px; border-color: #ff3333; color: #ff3333;">WYMUŚ START</button>
@@ -60,12 +60,12 @@
     <div id="chat-container">
         <div id="chat-messages"></div>
         <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Napisz i wciśnij ENTER..." autocomplete="off">
+            <input type="text" id="chat-input" placeholder="Wpisz tekst lub komendę (np. /cmd)..." autocomplete="off">
         </div>
     </div>
 
     <div id="hud">
-        <b>[T]</b>: Czat Tekstowy<br>
+        <b>[T]</b>: Czat / Komendy<br>
         <b>[F]</b>: Latarka<br>
         <b>[R]</b>: Reset Pozycji<br>
         <b>[ESC]</b>: Pauza<br>
@@ -73,10 +73,10 @@
     </div>
 
     <div id="menu">
-        <h1 class="vhs" style="font-size: 4em; margin-bottom: 20px;">BACKROOMS</h1>
+        <h1 class="neon-text" style="font-size: 4em; margin-bottom: 20px;">SPACE 3D V1</h1>
         
         <div id="login-ui">
-            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Eksplorator">
+            <input type="text" id="my-nick" placeholder="TWÓJ NICK" value="Astronauta">
             <div style="display:flex; flex-wrap: wrap; justify-content: center;">
                 <div class="panel">
                     <h3>ZAŁÓŻ SERWER</h3>
@@ -90,12 +90,12 @@
                     <button id="btn-join">POŁĄCZ</button>
                 </div>
             </div>
-            <button id="btn-offline" style="width:250px; margin-top:30px; border-color:#888; color:#888;">Eksploruj Solo (Offline)</button>
+            <button id="btn-offline" style="width:250px; margin-top:30px; border-color:#888; color:#888;">Graj Solo (Offline)</button>
         </div>
 
         <div id="pause-ui" class="hidden">
             <div class="panel">
-                <button id="btn-resume" style="background: #ffaa00; color: #000;">WZNÓW GRĘ</button>
+                <button id="btn-resume" style="background: #00ffff; color: #000;">WZNÓW GRĘ</button>
             </div>
             
             <div class="panel" style="border-color: #00ffaa;">
@@ -104,12 +104,12 @@
                 <button id="btn-toggle-sound" style="border-color: #00ffaa; color: #00ffaa;">Wycisz Innych Graczy</button>
             </div>
 
-            <div class="panel" style="border-color: #00ffff;">
-                <h3 style="color:#00ffff;">ODTWARZACZ (Folder /music/)</h3>
+            <div class="panel" style="border-color: #ff00ff;">
+                <h3 style="color:#ff00ff;">ODTWARZACZ MUZYKI</h3>
                 <select id="music-select">
                     <option value="">-- Wybierz plik z GitHuba --</option>
                 </select>
-                <button id="btn-play-music" style="border-color:#00ffff; color:#00ffff;">Graj dla Wszystkich</button>
+                <button id="btn-play-music" style="border-color:#ff00ff; color:#ff00ff;">Graj dla Wszystkich</button>
             </div>
         </div>
     </div>
@@ -136,24 +136,26 @@
         // =======================================================
         const myMusicFiles = [
             "lady_gaga.mp3", 
-            "ambient_backrooms.mp3"
+            "space_ambient.mp3"
         ]; 
         const musicSelect = document.getElementById('music-select');
         myMusicFiles.forEach(f => { let o = document.createElement('option'); o.value=f; o.text=f; musicSelect.appendChild(o); });
         const musicPlayer = document.getElementById('local-music-player');
 
         // --- ZMIENNE GLOBALNE ---
-        let peer = null, conn = null, myNick = "Eksplorator", isGameRunning = false, isChatting = false;
+        let peer = null, conn = null, myNick = "Astronauta", isGameRunning = false, isChatting = false;
         let remotePlayerGroup = new THREE.Group(), remoteAvatarLoaded = false;
+        let currentMapMesh = null;
         const mapColliders = [];
 
-        // --- RENDERER HD & RTX ---
+        // --- RENDERER HD ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020202);
         scene.fog = new THREE.FogExp2(0x020202, 0.02);
         
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         
+        // AUDIO 3D
         const audioListener = new THREE.AudioListener(); 
         camera.add(audioListener);
         const remotePositionalAudio = new THREE.PositionalAudio(audioListener);
@@ -164,15 +166,12 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2)); 
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace; 
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
-
-        // POTĘŻNA FUNKCJA: Pobieramy limit Anizotropii z Twojej karty graficznej (do ostrych tekstur)
-        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.4, 0.85);
@@ -180,7 +179,7 @@
         composer.addPass(renderScene); 
         composer.addPass(bloomPass);
 
-        const flashlight = new THREE.SpotLight(0xfff5b5, 4, 30, Math.PI/5, 0.5, 1);
+        const flashlight = new THREE.SpotLight(0xffffff, 4, 40, Math.PI/5, 0.5, 1);
         flashlight.castShadow = true;
         camera.add(flashlight);
         flashlight.target.position.set(0, 0, -1);
@@ -197,9 +196,8 @@
             if (audioListener.context.state === 'suspended') await audioListener.context.resume();
             try {
                 localMicStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                console.log("Mikrofon aktywny!");
             } catch (err) { 
-                console.warn("Brak mikrofonu. Voice chat wyłączony.", err); 
+                console.warn("Brak mikrofonu."); 
             }
         }
 
@@ -218,24 +216,59 @@
             e.target.style.color = isDeafened ? "red" : "#00ffaa";
         });
 
-        // --- CZAT TEKSTOWY ---
+        // --- CZAT I SYSTEM KOMEND ---
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const chatInputContainer = document.getElementById('chat-input-container');
 
-        function addChatMessage(sender, text, color = "#ffaa00") {
+        function addChatMessage(sender, text, color = "#00ffff") {
             const div = document.createElement('div'); div.className = "msg-line"; 
             div.innerHTML = `<span class="msg-nick" style="color:${color}">[${sender}]</span>: ${text}`;
             chatMessages.appendChild(div); 
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function handleCommand(cmdString) {
+            const args = cmdString.split(' ');
+            const cmd = args[0].toLowerCase();
+            
+            if (cmd === '/cmd' || cmd === '/help') {
+                addChatMessage("SYSTEM", "Dostępne komendy:", "#ffff00");
+                addChatMessage("SYSTEM", "- /map [nazwa] -> zmienia mapę dla wszystkich", "#ffff00");
+                addChatMessage("SYSTEM", "- /tp -> teleport na środek (ratunek)", "#ffff00");
+                addChatMessage("SYSTEM", "- /ping -> test połączenia", "#ffff00");
+            } 
+            else if (cmd === '/map') {
+                if (args[1]) {
+                    addChatMessage("SYSTEM", "Zmieniam mapę na: " + args[1], "#00ff00");
+                    loadMap(args[1], true); // true = wyślij info do innych
+                } else {
+                    addChatMessage("SYSTEM", "Błąd! Użycie: /map [nazwa_folderu]", "#ff3333");
+                }
+            } 
+            else if (cmd === '/tp') {
+                camera.position.set(0, 1.7, 0);
+                velocity.set(0,0,0);
+                addChatMessage("SYSTEM", "Teleportowano na środek.", "#00ff00");
+            }
+            else if (cmd === '/ping') {
+                addChatMessage("SYSTEM", "PONG! Silnik Space3dV1 działa.", "#ffaa00");
+            }
+            else {
+                addChatMessage("SYSTEM", "Nieznana komenda. Wpisz /cmd", "#ff3333");
+            }
+        }
+
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const txt = chatInput.value.trim();
                 if (txt !== '') { 
-                    addChatMessage(myNick, txt, "#00ff00"); 
-                    if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); 
+                    if (txt.startsWith('/')) {
+                        handleCommand(txt);
+                    } else {
+                        addChatMessage(myNick, txt, "#00ff00"); 
+                        if (conn && conn.open) conn.send({ type: 'chat', text: txt, nick: myNick }); 
+                    }
                     chatInput.value = ''; 
                 }
                 isChatting = false; 
@@ -244,7 +277,7 @@
             }
         });
 
-        // --- SYSTEM ŁADOWANIA MAPY BACKROOMS ---
+        // --- SYSTEM ŁADOWANIA MAPY ---
         const manager = new THREE.LoadingManager();
         const loader = new GLTFLoader(manager);
         let mapLoadedSuccess = false;
@@ -258,7 +291,7 @@
             document.getElementById('loading-screen').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('loading-screen').style.display = 'none';
-                document.getElementById('menu').style.display = 'flex';
+                if (!isGameRunning) document.getElementById('menu').style.display = 'flex';
                 
                 let lady = myMusicFiles.find(f => f.toLowerCase().includes('lady'));
                 if(lady) { musicPlayer.src = './music/'+lady; musicPlayer.volume = 0.5; musicPlayer.play().catch(()=>{}); }
@@ -267,53 +300,34 @@
 
         manager.onLoad = () => { if(mapLoadedSuccess) showMenu(); };
 
-        function buildProceduralFallback() {
-            document.getElementById('error-log').innerHTML += "<br/>Generowanie mapy zastępczej (Awaria modelu)...";
-            const wallMat = new THREE.MeshStandardMaterial({color: 0x887722, roughness: 0.9, side: THREE.DoubleSide});
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color: 0x332200}));
-            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor); mapColliders.push(floor);
+        function loadMap(mapName, sendToNetwork = false) {
+            document.getElementById('loading-screen').style.display = 'flex';
+            document.getElementById('loading-screen').style.opacity = '1';
+            document.getElementById('load-status').innerText = `Ładowanie obszaru: ${mapName}...`;
 
-            for(let i=0; i<50; i++) {
-                const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 0.5), wallMat);
-                wall.position.set((Math.random()-0.5)*40, 2.5, (Math.random()-0.5)*40);
-                wall.rotation.y = Math.random() > 0.5 ? Math.PI/2 : 0;
-                wall.castShadow = true; wall.receiveShadow = true;
-                scene.add(wall); mapColliders.push(wall);
+            if (currentMapMesh) {
+                scene.remove(currentMapMesh);
+                mapColliders.length = 0;
             }
-            camera.position.set(0, 1.5, 0);
-            mapLoadedSuccess = true;
-            document.getElementById('btn-force-start').classList.remove('hidden');
-        }
 
-        function initMapLoad() {
-            loader.load('./models/backrooms/scene.gltf', (gltf) => {
-                const map = gltf.scene;
+            loader.load(`./models/${mapName}/scene.gltf`, (gltf) => {
+                currentMapMesh = gltf.scene;
                 
-                const box = new THREE.Box3().setFromObject(map);
+                const box = new THREE.Box3().setFromObject(currentMapMesh);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3()).length();
                 
-                map.position.set(-center.x, -box.min.y, -center.z);
-                if (size < 5) map.scale.setScalar(20);
+                currentMapMesh.position.set(-center.x, -box.min.y, -center.z);
+                if (size < 5) currentMapMesh.scale.setScalar(20);
 
-                map.traverse(n => { 
+                currentMapMesh.traverse(n => { 
                     if(n.isMesh) { 
                         n.receiveShadow = true; n.castShadow = true; 
-                        
-                        // OTO NAPRAWA ROZPIKSELOWANYCH TEKSTUR (ANISOTROPIC FILTERING)
-                        if(n.material) {
-                            n.material.side = THREE.DoubleSide; 
-                            if(n.material.map) {
-                                n.material.map.anisotropy = maxAnisotropy;
-                                n.material.map.minFilter = THREE.LinearMipmapLinearFilter;
-                                n.material.map.magFilter = THREE.LinearFilter;
-                                n.material.needsUpdate = true;
-                            }
-                        }
+                        if(n.material) n.material.side = THREE.DoubleSide; 
                         mapColliders.push(n); 
                     }
                 });
-                scene.add(map);
+                scene.add(currentMapMesh);
                 
                 camera.position.set(0, 10, 0);
                 const spawnRay = new THREE.Raycaster(new THREE.Vector3(0, 20, 0), new THREE.Vector3(0, -1, 0));
@@ -322,39 +336,69 @@
                 else camera.position.y = 1.6;
 
                 mapLoadedSuccess = true;
+
+                if (sendToNetwork && conn && conn.open) {
+                    conn.send({ type: 'commandMap', mapName: mapName });
+                }
             }, undefined, (error) => {
-                document.getElementById('error-log').innerText = "Błąd pobierania modelu z GitHuba!";
-                buildProceduralFallback();
+                addChatMessage("SYSTEM", `BŁĄD: Nie znaleziono mapy ./models/${mapName}/scene.gltf`, "#ff3333");
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
             });
         }
 
         document.getElementById('btn-force-start').addEventListener('click', showMenu);
 
-        // --- MULTIPLAYER & ZMNIEJSZONY AVATAR ---
+        // --- KULOODPORNY SYSTEM AVATARA ---
         function setupRemote(nick) {
             if(remoteAvatarLoaded) return;
+            
+            // 1. Nick nad głową
             const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-            canvas.width = 256; canvas.height = 64; ctx.fillStyle = "#ffaa00"; ctx.font = "bold 32px Arial"; ctx.textAlign = "center"; ctx.fillText(nick, 128, 45);
+            canvas.width = 256; canvas.height = 64; ctx.fillStyle = "#00ffff"; ctx.font = "bold 32px Arial"; ctx.textAlign = "center"; ctx.fillText(nick, 128, 45);
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas)})); 
-            sprite.position.y = 1.3; // Obniżone dla małego avatara
-            sprite.scale.set(2.5, 0.6, 1);
+            sprite.position.y = 2.2; sprite.scale.set(3,0.75,1);
             remotePlayerGroup.add(sprite);
 
-            // Zmniejszony cylinder awaryjny (gdyby model się nie wgrał)
-            const fallback = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.9, 8), new THREE.MeshStandardMaterial({color:0xffaa00, wireframe:true}));
-            fallback.position.y = 0.45; remotePlayerGroup.add(fallback);
-            scene.add(remotePlayerGroup); remoteAvatarLoaded = true;
+            // 2. Awaryjny słupek
+            const fallback = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.8, 8), new THREE.MeshStandardMaterial({color:0x00ffff, wireframe:true}));
+            fallback.position.y = 0.9; 
+            remotePlayerGroup.add(fallback);
+            scene.add(remotePlayerGroup); 
+            remoteAvatarLoaded = true;
 
+            // 3. Ładowanie prawdziewego Avatara z auto-centrowaniem i skalowaniem
+            console.log("Próba ładowania Avatara...");
             loader.load('./models/avatar/scene.gltf', (gltf) => {
                 const av = gltf.scene; 
-                av.position.y = 0; 
-                av.scale.setScalar(0.4); // <--- TUTAJ ZMNIEJSZYŁEM POSTAĆ DO 40% ROZMIARU
                 
+                // Mierzymy Avatara, żeby upewnić się, że nie jest gigantem ani mrówką
+                const box = new THREE.Box3().setFromObject(av);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // Centrujemy model tak, aby stał idealnie stopami na 0
+                av.position.set(-center.x, -box.min.y, -center.z);
+                
+                // Obliczamy skalę tak, aby wysokość modelu (Y) wynosiła równo 1.8 metra
+                if (size.y > 0) {
+                    const targetHeight = 1.8;
+                    const scaleFactor = targetHeight / size.y;
+                    av.scale.setScalar(scaleFactor);
+                }
+
                 av.traverse(n => { if(n.isMesh) { n.castShadow=true; n.receiveShadow=true; }});
+                
+                // Wrzucamy poprawionego Avatara do "Pudełka" (Wrapper), żeby łatwo nim obracać
+                const wrapper = new THREE.Group();
+                wrapper.add(av);
+
                 remotePlayerGroup.remove(fallback); 
-                remotePlayerGroup.add(av);
-            }, undefined, (e) => {
-                console.error("Błąd pobierania avatara:", e);
+                remotePlayerGroup.add(wrapper);
+                console.log("Avatar załadowany i przeskalowany!");
+            }, undefined, (error) => {
+                console.error("Błąd Avatara:", error);
+                addChatMessage("SYSTEM", "Brak pliku ./models/avatar/scene.gltf! Pozostawiono model awaryjny.", "#ff3333");
             });
         }
 
@@ -370,7 +414,8 @@
             if(d.type === 'initReply') { setupRemote(d.nick); }
             if(d.type === 'move' && remoteAvatarLoaded) { remotePlayerGroup.position.set(d.x, d.y, d.z); remotePlayerGroup.rotation.y = d.ry; }
             if(d.type === 'chat') { addChatMessage(d.nick, d.text, "#00ffff"); }
-            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); }
+            if(d.type === 'music') { musicPlayer.src = './music/'+d.file; musicPlayer.play(); addChatMessage("RADIO", "Odtwarzam: " + d.file, "#ff00ff");}
+            if(d.type === 'commandMap') { loadMap(d.mapName, false); addChatMessage("SYSTEM", "Host zmienił mapę na: " + d.mapName, "#ffff00");}
         }
 
         // --- UI ACTIONS ---
@@ -378,7 +423,7 @@
             document.getElementById('init-screen').style.display = 'none';
             document.getElementById('loading-screen').style.display = 'flex';
             await initAudioSystem();
-            initMapLoad();
+            loadMap('backrooms', false); // Startowa mapa to backrooms
             setTimeout(() => { if(!mapLoadedSuccess) manager.onLoad(); }, 3000); 
         });
 
@@ -393,7 +438,7 @@
         }
 
         document.getElementById('btn-create').addEventListener('click', () => {
-            myNick = document.getElementById('my-nick').value;
+            myNick = document.getElementById('my-nick').value || "Host";
             const code = Math.random().toString(36).substring(2,7).toUpperCase();
             peer = new Peer(code);
             peer.on('open', (id) => { 
@@ -406,7 +451,7 @@
         });
 
         document.getElementById('btn-join').addEventListener('click', () => {
-            myNick = document.getElementById('my-nick').value;
+            myNick = document.getElementById('my-nick').value || "Klient";
             const code = document.getElementById('join-code').value.toUpperCase();
             if(code.length !== 5) return;
             peer = new Peer();
@@ -434,12 +479,13 @@
         document.getElementById('btn-play-music').addEventListener('click', () => {
             const f = musicSelect.value; if(!f) return;
             musicPlayer.src = './music/'+f; musicPlayer.play();
+            addChatMessage("RADIO", "Włączyłeś piosenkę: " + f, "#ff00ff");
             if(conn && conn.open) conn.send({type:'music', file:f});
             document.getElementById('menu').style.display = 'none'; 
             controls.lock();
         });
 
-        // --- STEROWANIE ---
+        // --- STEROWANIE I FIZYKA ---
         const controls = new PointerLockControls(camera, document.body);
         
         controls.addEventListener('unlock', () => {
@@ -465,8 +511,7 @@
             }
             if(e.code === 'KeyF') flashlight.visible = !flashlight.visible;
             if(e.code === 'KeyR' && isGameRunning) {
-                camera.position.set(0, 1.6, 0); 
-                velocity.set(0,0,0);
+                handleCommand('/tp'); // Użycie nowej komendy
             }
             switch(e.code) { case 'KeyW': moveF = true; break; case 'KeyS': moveB = true; break; case 'KeyA': moveL = true; break; case 'KeyD': moveR = true; break; case 'ShiftLeft': isSprinting = true; break; }
         });
@@ -483,7 +528,7 @@
             const moveDirection = dir.clone().applyMatrix4(rotationMatrix).normalize();
             moveRaycaster.set(origin, moveDirection);
             const intersects = moveRaycaster.intersectObjects(mapColliders, false);
-            return (intersects.length > 0 && intersects[0].distance < 0.4); // Zmniejszyłem dystans by łatwiej chodzić w ciasnych miejscach
+            return (intersects.length > 0 && intersects[0].distance < 0.4);
         }
 
         // --- GŁÓWNA PĘTLA ---
@@ -508,21 +553,25 @@
                     if(!checkWallCollision(new THREE.Vector3(Math.sign(velocity.x), 0, 0))) controls.moveRight(-velocity.x * delta); else velocity.x = 0; 
                 }
 
-                const downRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
-                const floorHits = downRay.intersectObjects(mapColliders);
-                if(floorHits.length > 0) {
-                    const dist = floorHits[0].distance;
-                    if(dist < 1.5) camera.position.y += (1.6 - dist); 
-                    else if(dist > 1.7) camera.position.y -= 5 * delta; 
+                // Grawitacja 
+                if (mapColliders.length > 0) {
+                    const downRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
+                    const floorHits = downRay.intersectObjects(mapColliders);
+                    if(floorHits.length > 0) {
+                        const dist = floorHits[0].distance;
+                        if(dist < 1.6) camera.position.y += (1.7 - dist); 
+                        else if(dist > 1.8) camera.position.y -= 5 * delta; 
+                    }
                 }
 
+                // Auto-Respawn
                 if (camera.position.y < -10) {
-                    camera.position.set(0, 1.6, 0);
+                    camera.position.set(0, 1.7, 0);
                     velocity.set(0,0,0);
                 }
 
                 if(conn && conn.open) {
-                    conn.send({type:'move', x:camera.position.x, y:camera.position.y - 1.6, z:camera.position.z, ry:camera.rotation.y});
+                    conn.send({type:'move', x:camera.position.x, y:camera.position.y - 1.7, z:camera.position.z, ry:camera.rotation.y});
                 }
             }
             
